@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand Colors */
+  --color-brand-blue: #1565C0;
+  --color-brand-green: #2EAD4B;
+  --color-brand-dark: #0D47A1;
+
+  /* State Colors */
+  --color-state-pending: #FBBC00;
+  --color-state-process: #1E88E5;
+  --color-state-resolved: #43A047;
+  --color-state-rejected: #E53935;
+
+  /* Neutral Variables */
+  --color-background: var(--bg-color);
+  --color-surface: var(--surface-color);
+  --color-text-main: var(--text-main-color);
+  --color-text-secondary: var(--text-sec-color);
+  --color-border: var(--border-color);
+  --color-foreground: var(--text-main-color);
+  
+  --radius-radius: 1rem;
+}
+
+@layer base {
+  :root {
+    --bg-color: #F5F7FA;
+    --surface-color: #FFFFFF;
+    --text-main-color: #263238;
+    --text-sec-color: #607D8B;
+    --border-color: #DDE3EA;
+    --sidebar-active-bg: #1565C01A; /* 10% opacidad del azul institucional */
+    --sidebar-active-text: #1565C0;
+  }
+  
+  .dark {
+    --bg-color: #12161C;
+    --surface-color: #1E232B;
+    --text-main-color: #E6EAF0;
+    --text-sec-color: #9AA4B2;
+    --border-color: #2A313C;
+    --sidebar-active-bg: #93C5FD33; /* 20% opacidad de un azul muy claro */
+    --sidebar-active-text: #93C5FD; /* Azul claro muy brillante */
+  }
+
+  body {
+    @apply bg-background text-text-main font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-text-main font-semibold;
+  }
+}
+
+.glass {
+  @apply bg-surface/80 backdrop-blur-xl border border-border shadow-lg;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
