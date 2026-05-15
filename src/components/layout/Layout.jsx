@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom';
 
 export const Layout = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -16,9 +17,13 @@ export const Layout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar toggleDarkMode={() => setIsDarkMode(!isDarkMode)} isDarkMode={isDarkMode} />
+        <Topbar 
+          toggleDarkMode={() => setIsDarkMode(!isDarkMode)} 
+          isDarkMode={isDarkMode} 
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <Outlet />
         </main>
