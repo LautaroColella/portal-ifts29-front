@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, ClipboardList, BarChart2, HelpCircle } from 'lucide-react';
 
@@ -49,7 +48,7 @@ export const Sidebar = ({ isOpen }) => {
   const menuItems = [
     { icon: Home, label: 'Inicio', path: '/' },
     { icon: ClipboardList, label: 'Reclamos', path: '/reclamos' },
-    { icon: BarChart2, label: 'Reportes', path: '/reportes' },
+    { icon: BarChart2, label: 'Reportes', path: '/dashboard' },
     { icon: HelpCircle, label: 'Ayuda', path: '/ayuda' }
   ];
 

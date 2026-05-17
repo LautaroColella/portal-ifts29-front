@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, Bell, ChevronDown, Moon, Sun, Menu } from 'lucide-react';
+import { ChevronDown, Moon, Sun, Menu } from 'lucide-react';
 
 export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   return (
