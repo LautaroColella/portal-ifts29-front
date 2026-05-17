@@ -1,4 +1,27 @@
+import { useState } from 'react';
+
 export const TicketsList = () => {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [title, setTitle] = useState('');
+  const [validationError, setValidationError] = useState('');
+
+  const MAX_TITLE_LENGTH = 100;
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    
+    // Check if length exceeds maximum
+    if (value.length > MAX_TITLE_LENGTH) {
+      setValidationError(`El título no puede superar los ${MAX_TITLE_LENGTH} caracteres`);
+      return;
+    }
+
+    // Clear validation error if within limits
+    setValidationError('');
+    setTitle(value);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -11,8 +34,18 @@ export const TicketsList = () => {
         <input
           type="text"
           placeholder="Buscar por título..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          value={title}
+          onChange={handleSearchChange}
+          maxLength={MAX_TITLE_LENGTH + 1}
+          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
+            validationError
+              ? 'border-red-300 focus:ring-red-500'
+              : 'border-gray-300 focus:ring-primary-500'
+          }`}
         />
+        {validationError && (
+          <p className="text-red-600 text-sm mt-2">{validationError}</p>
+        )}
       </div>
 
       {/* Table Container */}
@@ -52,11 +85,15 @@ export const TicketsList = () => {
 
       {/* Pagination Controls */}
       <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm text-text-secondary">Página 1</p>
+        <p className="text-sm text-text-secondary">Página {page}</p>
         <div className="flex gap-2">
           <button
-            disabled
-            className="px-4 py-2 bg-gray-300 text-white rounded-lg cursor-not-allowed opacity-50 font-medium"
+            disabled={page === 1}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              page === 1
+                ? 'bg-gray-300 text-white cursor-not-allowed opacity-50'
+                : 'bg-primary-500 text-white hover:bg-primary-600'
+            }`}
           >
             Anterior
           </button>
