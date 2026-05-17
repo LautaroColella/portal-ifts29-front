@@ -10,15 +10,63 @@ export const CreateTicket = () => {
   const [subcategory, setSubcategory] = useState('');
   const [subject, setSubject] = useState('');
   const [commission, setCommission] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
 
   const handleCancel = () => {
     navigate('/reclamos');
   };
 
+  // Validate form fields
+  const validateForm = () => {
+    const errors = [];
+    const newTitleError = '';
+    const newDescriptionError = '';
+
+    // Check required fields
+    if (!title.trim()) {
+      errors.push('El título es obligatorio');
+    }
+    if (!description.trim()) {
+      errors.push('La descripción es obligatoria');
+    }
+    if (!category) {
+      errors.push('Debes seleccionar una categoría');
+    }
+    if (!subcategory) {
+      errors.push('Debes seleccionar una subcategoría');
+    }
+
+    setTitleError(newTitleError);
+    setDescriptionError(newDescriptionError);
+    setValidationErrors(errors);
+
+    return errors.length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Will be implemented in Stage 3
+
+    if (!validateForm()) {
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Will be implemented in Stage 3 with API call
+    console.log('Form data ready for submission:', {
+      title: title.trim(),
+      description: description.trim(),
+      category,
+      subcategory,
+      subject: subject.trim(),
+      commission: commission.trim(),
+    });
   };
+
+  // Check if form is ready to submit
+  const isFormValid = title.trim() && description.trim() && category && subcategory;
 
   // Subcategory options mapped by category
   const subcategoryOptions = {
@@ -52,6 +100,20 @@ export const CreateTicket = () => {
         <p className="text-text-secondary">Completa el formulario para registrar un nuevo reclamo</p>
       </div>
 
+      {/* Validation Errors Alert */}
+      {validationErrors.length > 0 && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 font-semibold mb-2">Por favor corrige los siguientes errores:</p>
+          <ul className="list-disc list-inside space-y-1">
+            {validationErrors.map((error, index) => (
+              <li key={index} className="text-red-600 text-sm">
+                {error}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
         {/* Main Content */}
@@ -68,8 +130,13 @@ export const CreateTicket = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej: Problema con calificación de examen"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
+                  titleError
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-primary-500'
+                }`}
               />
+              {titleError && <p className="text-red-600 text-sm mt-1">{titleError}</p>}
             </div>
 
             {/* Description Textarea */}
@@ -83,8 +150,13 @@ export const CreateTicket = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe en detalle el problema o solicitud"
                 rows={5}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none ${
+                  descriptionError
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-primary-500'
+                }`}
               />
+              {descriptionError && <p className="text-red-600 text-sm mt-1">{descriptionError}</p>}
             </div>
 
             {/* Category Selector */}
@@ -180,7 +252,12 @@ export const CreateTicket = () => {
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 font-medium transition-colors ml-auto"
+            disabled={!isFormValid}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ml-auto ${
+              isFormValid
+                ? 'bg-primary-500 text-white hover:bg-primary-600 cursor-pointer'
+                : 'bg-gray-300 text-white cursor-not-allowed opacity-50'
+            }`}
           >
             Enviar Reclamo
           </button>
