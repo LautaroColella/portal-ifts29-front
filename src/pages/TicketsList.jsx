@@ -9,6 +9,7 @@ export const TicketsList = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   const MAX_TITLE_LENGTH = 100;
 
@@ -28,12 +29,16 @@ export const TicketsList = () => {
 
         const response = await apiFetch(`/tickets?${params.toString()}`);
         setTickets(response.data || []);
+        
+        // Determine if there's a next page based on number of results
+        setHasNextPage((response.data || []).length === limit);
       } catch (error) {
         // Extract error message from API response or use default
         const errorMessage =
           error.response?.data?.error || error.message || 'Error al cargar los tickets';
         setApiError(errorMessage);
         setTickets([]);
+        setHasNextPage(false);
       } finally {
         setLoading(false);
       }
@@ -54,6 +59,9 @@ export const TicketsList = () => {
     // Clear validation error if within limits
     setValidationError('');
     setTitle(value);
+    
+    // Reset to page 1 when search changes
+    setPage(1);
   };
 
   const getStatusBadgeColor = (status) => {
@@ -77,7 +85,9 @@ export const TicketsList = () => {
   };
 
   const handleNextPage = () => {
-    setPage(page + 1);
+    if (hasNextPage) {
+      setPage(page + 1);
+    }
   };
 
   return (
@@ -147,13 +157,13 @@ export const TicketsList = () => {
               </tr>
             ) : (
               tickets.map((ticket) => (
-                <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-sm text-text-main">{ticket.id}</td>
-                  <td className="px-6 py-4 text-sm text-text-main">{ticket.title}</td>
+                  <td className="px-6 py-4 text-sm text-text-main font-medium">{ticket.title}</td>
                   <td className="px-6 py-4 text-sm text-text-main">{ticket.category}</td>
                   <td className="px-6 py-4 text-sm">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(
                         ticket.status
                       )}`}
                     >
@@ -169,22 +179,29 @@ export const TicketsList = () => {
 
       {/* Pagination Controls */}
       <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm text-text-secondary">Página {page}</p>
+        <p className="text-sm text-text-secondary">
+          Página <span className="font-semibold">{page}</span>
+        </p>
         <div className="flex gap-2">
           <button
             onClick={handlePreviousPage}
             disabled={page === 1}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               page === 1
                 ? 'bg-gray-300 text-white cursor-not-allowed opacity-50'
-                : 'bg-primary-500 text-white hover:bg-primary-600'
+                : 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
             }`}
           >
             Anterior
           </button>
           <button
             onClick={handleNextPage}
-            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 font-medium transition-colors"
+            disabled={!hasNextPage}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              hasNextPage
+                ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
+                : 'bg-gray-300 text-white cursor-not-allowed opacity-50'
+            }`}
           >
             Siguiente
           </button>
