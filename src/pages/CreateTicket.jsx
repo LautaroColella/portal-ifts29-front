@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 
 export const CreateTicket = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export const CreateTicket = () => {
   const [validationErrors, setValidationErrors] = useState([]);
   const [titleError, setTitleError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const handleCancel = () => {
     navigate('/reclamos');
@@ -45,7 +48,7 @@ export const CreateTicket = () => {
     return errors.length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -54,15 +57,37 @@ export const CreateTicket = () => {
       return;
     }
 
-    // Will be implemented in Stage 3 with API call
-    console.log('Form data ready for submission:', {
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      subcategory,
-      subject: subject.trim(),
-      commission: commission.trim(),
-    });
+    try {
+      setLoading(true);
+      setApiError('');
+
+      const ticketData = {
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        subcategory,
+        subject: subject.trim() || null,
+        commission: commission.trim() || null,
+      };
+
+      await apiFetch('/tickets', {
+        method: 'POST',
+        body: JSON.stringify(ticketData),
+      });
+
+      // Success: navigate to tickets list
+      navigate('/reclamos');
+    } catch (error) {
+      // Extract error message from API response or use default
+      const errorMessage =
+        error.response?.data?.error || error.message || 'Error al crear el reclamo';
+      setApiError(errorMessage);
+
+      // Scroll to top to show error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Check if form is ready to submit
@@ -114,6 +139,20 @@ export const CreateTicket = () => {
         </div>
       )}
 
+      {/* API Error Alert */}
+      {apiError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm">{apiError}</p>
+        </div>
+      )}
+
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-700 text-sm">Enviando reclamo...</p>
+        </div>
+      )}
+
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
         {/* Main Content */}
@@ -130,7 +169,8 @@ export const CreateTicket = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej: Problema con calificación de examen"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
+                disabled={loading}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   titleError
                     ? 'border-red-300 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-primary-500'
@@ -150,7 +190,8 @@ export const CreateTicket = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe en detalle el problema o solicitud"
                 rows={5}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none ${
+                disabled={loading}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed ${
                   descriptionError
                     ? 'border-red-300 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-primary-500'
@@ -171,7 +212,8 @@ export const CreateTicket = () => {
                   setCategory(e.target.value);
                   setSubcategory('');
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white"
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Selecciona una categoría</option>
                 <option value="ACADEMIC">Académica</option>
@@ -190,9 +232,9 @@ export const CreateTicket = () => {
                 id="subcategory"
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
-                disabled={!category}
+                disabled={!category || loading}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white ${
-                  !category
+                  !category || loading
                     ? 'border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
                     : 'border-gray-300 focus:ring-primary-500'
                 }`}
@@ -220,7 +262,8 @@ export const CreateTicket = () => {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Ej: Programación I"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -235,7 +278,8 @@ export const CreateTicket = () => {
                 value={commission}
                 onChange={(e) => setCommission(e.target.value)}
                 placeholder="Ej: 1K"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -246,20 +290,21 @@ export const CreateTicket = () => {
           <button
             type="button"
             onClick={handleCancel}
-            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+            disabled={loading}
+            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || loading}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ml-auto ${
-              isFormValid
+              isFormValid && !loading
                 ? 'bg-primary-500 text-white hover:bg-primary-600 cursor-pointer'
                 : 'bg-gray-300 text-white cursor-not-allowed opacity-50'
             }`}
           >
-            Enviar Reclamo
+            {loading ? 'Enviando...' : 'Enviar Reclamo'}
           </button>
         </div>
       </form>
