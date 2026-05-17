@@ -1,16 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 
 export const TicketsList = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [title, setTitle] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const MAX_TITLE_LENGTH = 100;
 
+  // Fetch tickets from API
+  useEffect(() => {
+    const fetchTicketsData = async () => {
+      try {
+        setLoading(true);
+        setApiError('');
+
+        // Build query parameters with trimmed title
+        const params = new URLSearchParams({
+          page,
+          limit,
+          title: title.trim(),
+        });
+
+        const response = await apiFetch(`/tickets?${params.toString()}`);
+        setTickets(response.data || []);
+      } catch (error) {
+        // Extract error message from API response or use default
+        const errorMessage =
+          error.response?.data?.error || error.message || 'Error al cargar los tickets';
+        setApiError(errorMessage);
+        setTickets([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTicketsData();
+  }, [page, title, limit]);
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
-    
+
     // Check if length exceeds maximum
     if (value.length > MAX_TITLE_LENGTH) {
       setValidationError(`El título no puede superar los ${MAX_TITLE_LENGTH} caracteres`);
@@ -20,6 +54,30 @@ export const TicketsList = () => {
     // Clear validation error if within limits
     setValidationError('');
     setTitle(value);
+  };
+
+  const getStatusBadgeColor = (status) => {
+    const statusLower = status?.toLowerCase() || '';
+    
+    if (statusLower === 'open') {
+      return 'bg-green-100 text-green-800';
+    } else if (statusLower === 'in progress' || statusLower === 'in_progress') {
+      return 'bg-blue-100 text-blue-800';
+    } else if (statusLower === 'closed') {
+      return 'bg-gray-100 text-gray-800';
+    }
+    
+    return 'bg-gray-100 text-gray-800';
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    setPage(page + 1);
   };
 
   return (
@@ -48,6 +106,13 @@ export const TicketsList = () => {
         )}
       </div>
 
+      {/* API Error Message */}
+      {apiError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm">{apiError}</p>
+        </div>
+      )}
+
       {/* Table Container */}
       <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
         <table className="w-full border-collapse">
@@ -68,17 +133,36 @@ export const TicketsList = () => {
             </tr>
           </thead>
           <tbody>
-            {/* Sample Row - Placeholder for dynamic content */}
-            <tr className="border-b border-gray-200 hover:bg-gray-50">
-              <td className="px-6 py-4 text-sm text-text-main">1</td>
-              <td className="px-6 py-4 text-sm text-text-main">Ejemplo de Ticket</td>
-              <td className="px-6 py-4 text-sm text-text-main">General</td>
-              <td className="px-6 py-4 text-sm">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Open
-                </span>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="px-6 py-8 text-center text-text-secondary">
+                  Cargando tickets...
+                </td>
+              </tr>
+            ) : tickets.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="px-6 py-8 text-center text-text-secondary">
+                  No se encontraron tickets.
+                </td>
+              </tr>
+            ) : (
+              tickets.map((ticket) => (
+                <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm text-text-main">{ticket.id}</td>
+                  <td className="px-6 py-4 text-sm text-text-main">{ticket.title}</td>
+                  <td className="px-6 py-4 text-sm text-text-main">{ticket.category}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                        ticket.status
+                      )}`}
+                    >
+                      {ticket.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -88,6 +172,7 @@ export const TicketsList = () => {
         <p className="text-sm text-text-secondary">Página {page}</p>
         <div className="flex gap-2">
           <button
+            onClick={handlePreviousPage}
             disabled={page === 1}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               page === 1
@@ -98,6 +183,7 @@ export const TicketsList = () => {
             Anterior
           </button>
           <button
+            onClick={handleNextPage}
             className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 font-medium transition-colors"
           >
             Siguiente
