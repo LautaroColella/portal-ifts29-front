@@ -1,14 +1,28 @@
 export const calculateMetrics = (tickets) => {
-  if (!tickets || tickets.length === 0) return null;
+    if (!tickets || tickets.length === 0) return null;
 
-  let total = tickets.length;
+    const statusGroups = {
+        open: ['OPEN'],
+        process: ['IN_PROGRESS', 'WAITING_FOR_STUDENT', 'WAITING_FOR_THIRD_PARTY'],
+        resolved: ['RESOLVED', 'CLOSED'],
+        cancelled: ['CANCELLED']
+    };
+
+    let total = tickets.length;
+    let resolvedCount = 0;
      
-  // Cálculo de tendencias simuladas
-  const totalTrend = `+${Math.round(total * 0.1)}%`;
+    tickets.forEach(ticket => {
+        if (statusGroups.resolved.includes(ticket.status)) {
+            resolvedCount++;
+        }
+    });
 
-  return {  
-    total,
-    totalTrend
-  };
+    // Cálculo de promedios
+    const resolutionRate = total > 0 ? Math.round((resolvedCount / total) * 100) : 0;
+  
+    return {  
+        total,
+        resolutionRate    
+    };
 
 };
