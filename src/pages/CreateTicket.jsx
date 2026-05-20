@@ -134,11 +134,11 @@ export const CreateTicket = () => {
 
       {/* Validation Errors Alert */}
       {validationErrors.length > 0 && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 font-semibold mb-2">Por favor corrige los siguientes errores:</p>
+        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
+          <p className="text-red-800 font-semibold mb-2 dark:text-red-100">Por favor corrige los siguientes errores:</p>
           <ul className="list-disc list-inside space-y-1">
             {validationErrors.map((error, index) => (
-              <li key={index} className="text-red-600 text-sm">
+              <li key={index} className="text-red-700 text-sm dark:text-red-200">
                 {error}
               </li>
             ))}
@@ -148,15 +148,15 @@ export const CreateTicket = () => {
 
       {/* API Error Alert */}
       {apiError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{apiError}</p>
+        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
+          <p className="text-red-800 text-sm dark:text-red-100">{apiError}</p>
         </div>
       )}
 
       {/* Loading Spinner */}
       {loading && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 text-sm">Enviando reclamo...</p>
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-300 rounded-lg dark:bg-blue-900 dark:border-blue-700">
+          <p className="text-blue-800 text-sm dark:text-blue-100">Enviando reclamo...</p>
         </div>
       )}
 
@@ -177,10 +177,10 @@ export const CreateTicket = () => {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej: Problema con calificación de examen"
                 disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 ${
                   titleError
-                    ? 'border-red-300 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-primary-500'
+                    ? 'border-red-500 focus:ring-red-500 dark:border-red-700'
+                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
                 }`}
               />
               {titleError && <p className="text-red-600 text-sm mt-1">{titleError}</p>}
@@ -198,10 +198,10 @@ export const CreateTicket = () => {
                 placeholder="Describe en detalle el problema o solicitud"
                 rows={5}
                 disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 ${
                   descriptionError
-                    ? 'border-red-300 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-primary-500'
+                    ? 'border-red-500 focus:ring-red-500 dark:border-red-700'
+                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
                 }`}
               />
               {descriptionError && <p className="text-red-600 text-sm mt-1">{descriptionError}</p>}
@@ -220,7 +220,7 @@ export const CreateTicket = () => {
                   setSubcategory('');
                 }}
                 disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Selecciona una categoría</option>
                 <option value="ACADEMIC">Académica</option>
@@ -240,10 +240,10 @@ export const CreateTicket = () => {
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
                 disabled={!category || loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white text-gray-900 dark:bg-gray-800 dark:text-white ${
                   !category || loading
-                    ? 'border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
-                    : 'border-gray-300 focus:ring-primary-500'
+                    ? 'border-gray-300 text-gray-900 cursor-not-allowed opacity-60 dark:border-gray-600 dark:text-gray-400'
+                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
                 }`}
               >
                 <option value="">
@@ -270,7 +270,7 @@ export const CreateTicket = () => {
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Ej: Programación I"
                 disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
               />
             </div>
 
@@ -286,29 +286,29 @@ export const CreateTicket = () => {
                 onChange={(e) => setCommission(e.target.value)}
                 placeholder="Ej: 1K"
                 disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
               />
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
+        <div className="flex gap-4 mt-8 pt-6 border-t border-gray-300 dark:border-gray-700">
           <button
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={!isFormValid || loading}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ml-auto ${
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ml-auto ${
               isFormValid && !loading
-                ? 'bg-primary-500 text-white hover:bg-primary-600 cursor-pointer'
-                : 'bg-gray-300 text-white cursor-not-allowed opacity-50'
+                ? 'bg-primary-500 text-white hover:bg-primary-600 cursor-pointer active:scale-95 dark:bg-primary-600 dark:hover:bg-primary-700'
+                : 'bg-gray-400 text-white cursor-not-allowed opacity-60 dark:bg-gray-700'
             }`}
           >
             {loading ? 'Enviando...' : 'Enviar Reclamo'}
