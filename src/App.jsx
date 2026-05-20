@@ -5,6 +5,7 @@ import { TicketsList } from './pages/TicketsList';
 import { CreateTicket } from './pages/CreateTicket';
 import { TicketDetail } from './pages/TicketDetail';
 import { Dashboard } from './pages/Dashboard';
+import { MetricsDashboard } from './pages/MetricsDashboard';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="reclamos/create" element={<CreateTicket />} />
           <Route path="reclamos/:id" element={<TicketDetail />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="reportes" element={<MetricsDashboard />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
