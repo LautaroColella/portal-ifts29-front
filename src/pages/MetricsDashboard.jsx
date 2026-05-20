@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StatCard } from '../components/metrics/StatCard';
+import { StatusChart } from '../components/metrics/StatusChart';
 import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
@@ -51,7 +52,11 @@ export const MetricsDashboard = () => {
                 {statsConfig.map((stat, index) => (
                 <StatCard key={index} {...stat} />
                 ))}
-            </div>             
+            </div>        
+
+            <div className="lg:col-span-1 min-h-[300px]">
+            <   StatusChart data={data.statusChartData} />
+            </div>     
     
         </div>
     );
