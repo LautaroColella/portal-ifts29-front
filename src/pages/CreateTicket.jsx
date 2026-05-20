@@ -78,9 +78,16 @@ export const CreateTicket = () => {
       // Success: navigate to tickets list
       navigate('/reclamos');
     } catch (error) {
-      // Extract error message from API response or use default
-      const errorMessage =
-        error.response?.data?.error || error.message || 'Error al crear el reclamo';
+      // Extract error message from API response or use friendly message
+      const errorMessage = (() => {
+        if (error.response?.data?.error) {
+          return error.response.data.error;
+        }
+        if (error.message && error.message.includes('Failed to fetch')) {
+          return 'No se puede conectar al servidor. Por favor intenta más tarde.';
+        }
+        return error.message || 'Error al crear el reclamo. Intenta nuevamente.';
+      })();
       setApiError(errorMessage);
 
       // Scroll to top to show error

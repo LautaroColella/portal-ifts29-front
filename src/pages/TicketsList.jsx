@@ -34,8 +34,15 @@ export const TicketsList = () => {
         setHasNextPage((response.data || []).length === limit);
       } catch (error) {
         // Extract error message from API response or use default
-        const errorMessage =
-          error.response?.data?.error || error.message || 'Error al cargar los tickets';
+        const errorMessage = (() => {
+          if (error.response?.data?.error) {
+            return error.response.data.error;
+          }
+          if (error.message && error.message.includes('Failed to fetch')) {
+            return 'No se puede conectar al servidor. Mostrando datos simulados.';
+          }
+          return error.message || 'Error al cargar los tickets. Intenta nuevamente.';
+        })();
         setApiError(errorMessage);
         setTickets([]);
         setHasNextPage(false);
@@ -68,14 +75,14 @@ export const TicketsList = () => {
     const statusLower = status?.toLowerCase() || '';
     
     if (statusLower === 'open') {
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
     } else if (statusLower === 'in progress' || statusLower === 'in_progress') {
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
     } else if (statusLower === 'closed') {
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
     
-    return 'bg-gray-100 text-gray-800';
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
   };
 
   const handlePreviousPage = () => {
@@ -104,11 +111,11 @@ export const TicketsList = () => {
           placeholder="Buscar por título..."
           value={title}
           onChange={handleSearchChange}
-          maxLength={MAX_TITLE_LENGTH + 1}
+          maxLength={MAX_TITLE_LENGTH}
           className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
             validationError
-              ? 'border-red-300 focus:ring-red-500'
-              : 'border-gray-300 focus:ring-primary-500'
+              ? 'border-red-500 bg-red-50 text-gray-900 placeholder-red-400 focus:ring-red-500 dark:bg-red-900 dark:border-red-700 dark:text-red-100 dark:placeholder-red-300'
+              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400'
           }`}
         />
         {validationError && (
@@ -118,26 +125,26 @@ export const TicketsList = () => {
 
       {/* API Error Message */}
       {apiError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{apiError}</p>
+        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
+          <p className="text-red-800 text-sm dark:text-red-100">{apiError}</p>
         </div>
       )}
 
       {/* Table Container */}
-      <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
+      <div className="flex-1 overflow-auto border border-gray-300 rounded-lg dark:border-gray-700">
         <table className="w-full border-collapse">
-          <thead className="bg-gray-50 sticky top-0">
+          <thead className="bg-gray-100 sticky top-0 dark:bg-gray-800">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-text-main border-b border-gray-200">
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 dark:text-white dark:border-gray-700">
                 ID
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-text-main border-b border-gray-200">
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 dark:text-white dark:border-gray-700">
                 Título
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-text-main border-b border-gray-200">
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 dark:text-white dark:border-gray-700">
                 Categoría
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-text-main border-b border-gray-200">
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 dark:text-white dark:border-gray-700">
                 Estado
               </th>
             </tr>
@@ -157,10 +164,10 @@ export const TicketsList = () => {
               </tr>
             ) : (
               tickets.map((ticket) => (
-                <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-text-main">{ticket.id}</td>
-                  <td className="px-6 py-4 text-sm text-text-main font-medium">{ticket.title}</td>
-                  <td className="px-6 py-4 text-sm text-text-main">{ticket.category}</td>
+                <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{ticket.id}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 font-medium">{ticket.title}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{ticket.category}</td>
                   <td className="px-6 py-4 text-sm">
                     <span
                       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(
@@ -180,7 +187,7 @@ export const TicketsList = () => {
       {/* Pagination Controls */}
       <div className="mt-6 flex items-center justify-between">
         <p className="text-sm text-text-secondary">
-          Página <span className="font-semibold">{page}</span>
+          Página <span className="font-semibold">{page}</span> — Mostrando {tickets.length} resultado{tickets.length !== 1 ? 's' : ''}
         </p>
         <div className="flex gap-2">
           <button
@@ -188,8 +195,8 @@ export const TicketsList = () => {
             disabled={page === 1}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               page === 1
-                ? 'bg-gray-300 text-white cursor-not-allowed opacity-50'
-                : 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
+                ? 'bg-gray-400 text-white cursor-not-allowed opacity-60 dark:bg-gray-700'
+                : 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95 dark:bg-primary-600 dark:hover:bg-primary-700'
             }`}
           >
             Anterior
@@ -199,8 +206,8 @@ export const TicketsList = () => {
             disabled={!hasNextPage}
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               hasNextPage
-                ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
-                : 'bg-gray-300 text-white cursor-not-allowed opacity-50'
+                ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95 dark:bg-primary-600 dark:hover:bg-primary-700'
+                : 'bg-gray-400 text-white cursor-not-allowed opacity-60 dark:bg-gray-700'
             }`}
           >
             Siguiente
