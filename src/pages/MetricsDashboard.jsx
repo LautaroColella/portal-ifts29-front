@@ -1,0 +1,55 @@
+import React, { useState, useEffect } from 'react';
+import { StatCard } from '../components/metrics/StatCard';
+import { ClipboardList } from 'lucide-react';
+import dbData from '../data/db.json';
+import { calculateMetrics } from '../utils/metricsUtils';
+
+export const MetricsDashboard = () => {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular una petición asíncrona a la API 
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulamos 800ms de red
+        // Utilizamos el json crudo y calculamos todo en frontend simulando el back
+        const metrics = calculateMetrics(dbData.tickets);
+        setData(metrics);
+      } catch (error) {
+        console.error("Error fetching metrics:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+    if (isLoading || !data) {
+        return <div>Cargando...</div>;
+    }
+
+    const statsConfig = [
+        { title: 'Total de Reclamos', value: data.total, trend: data.totalTrend, icon: ClipboardList, colorClass: 'bg-brand-blue' },
+    ];
+
+    return (
+        <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-text-main flex items-center gap-2">
+                <span className="text-brand-blue"><ClipboardList /></span>
+                Dashboard Analítico
+                </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {statsConfig.map((stat, index) => (
+                <StatCard key={index} {...stat} />
+                ))}
+            </div>             
+    
+        </div>
+    );
+};
