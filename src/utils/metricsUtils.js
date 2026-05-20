@@ -21,6 +21,8 @@ export const calculateMetrics = (tickets) => {
     let resolvedTicketsWithTime = 0;
     let pendingOld7 = 0;
      
+    const categoryCount = { ACADEMIC: 0, INSTITUTIONAL: 0, TECHNICAL: 0, GENERAL: 0 };
+
     tickets.forEach(ticket => {
         const createdAt = parseISO(ticket.createdAt);
         const isPending = statusGroups.open.includes(ticket.status) || statusGroups.process.includes(ticket.status);
@@ -46,12 +48,17 @@ export const calculateMetrics = (tickets) => {
             if (daysOld > 7) pendingOld7++;        
         }
 
+        // Tickets por categorías
+        if (categoryCount[ticket.category] !== undefined) {
+            categoryCount[ticket.category]++;
+        }
     });
 
     // Cálculo de promedios
     const resolutionRate = total > 0 ? Math.round((resolvedCount / total) * 100) : 0;
     const avgResolutionHours = resolvedTicketsWithTime > 0 ? (totalResolutionHours / resolvedTicketsWithTime) : 0;  
   
+    // Formato de gráficos
     const statusChartData = [
         { name: 'Pendientes', value: openCount, color: 'var(--color-state-pending)' },
         { name: 'En Proceso', value: processCount, color: 'var(--color-state-process)' },
@@ -59,12 +66,19 @@ export const calculateMetrics = (tickets) => {
         { name: 'Rechazados', value: cancelledCount, color: 'var(--color-state-rejected)' }
     ].filter(i => i.value > 0);
 
+    const categoryChartData = Object.keys(categoryCount).map(key => ({
+        name: key === 'ACADEMIC' ? 'Académico' : key === 'INSTITUTIONAL' ? 'Institucional' : key === 'TECHNICAL' ? 'Técnico' : 'General',
+        value: categoryCount[key],
+        color: '#1E88E5'
+    })).filter(i => i.value > 0);
+
     return {  
         total,
         resolutionRate,
         avgResolutionHours: Math.round(avgResolutionHours),
         pendingOld7,
-        statusChartData
+        statusChartData,
+        categoryChartData
     };
 
 };

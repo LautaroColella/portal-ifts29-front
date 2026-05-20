@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatCard } from '../components/metrics/StatCard';
 import { StatusChart } from '../components/metrics/StatusChart';
+import { CategoryChart } from '../components/metrics/CategoryChart';
 import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
@@ -54,10 +55,14 @@ export const MetricsDashboard = () => {
                 ))}
             </div>        
 
-            <div className="lg:col-span-1 min-h-[300px]">
-            <   StatusChart data={data.statusChartData} />
-            </div>     
-    
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 min-h-[300px]">
+                    <StatusChart data={data.statusChartData} />
+                </div>
+                <div className="lg:col-span-1 min-h-[300px]">
+                    <CategoryChart data={data.categoryChartData} />
+                </div>     
+            </div>
         </div>
     );
 };
