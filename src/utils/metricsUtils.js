@@ -1,7 +1,9 @@
-import { differenceInHours, parseISO } from 'date-fns';
+import { differenceInDays, differenceInHours, parseISO } from 'date-fns';
 
 export const calculateMetrics = (tickets) => {
     if (!tickets || tickets.length === 0) return null;
+
+    const now = new Date();
 
     const statusGroups = {
         open: ['OPEN'],
@@ -14,9 +16,11 @@ export const calculateMetrics = (tickets) => {
     let resolvedCount = 0;
     let totalResolutionHours = 0;
     let resolvedTicketsWithTime = 0;
+    let pendingOld7 = 0;
      
     tickets.forEach(ticket => {
         const createdAt = parseISO(ticket.createdAt);
+        const isPending = statusGroups.open.includes(ticket.status) || statusGroups.process.includes(ticket.status);
 
         if (statusGroups.resolved.includes(ticket.status)) {
             resolvedCount++;
@@ -28,6 +32,13 @@ export const calculateMetrics = (tickets) => {
                 resolvedTicketsWithTime++;
             }
         }
+
+        // Tickets pendientes
+        if (isPending) {
+            const daysOld = differenceInDays(now, createdAt);
+            if (daysOld > 7) pendingOld7++;        
+        }
+
     });
 
     // Cálculo de promedios
@@ -37,7 +48,8 @@ export const calculateMetrics = (tickets) => {
     return {  
         total,
         resolutionRate,
-        avgResolutionHours: Math.round(avgResolutionHours)  
+        avgResolutionHours: Math.round(avgResolutionHours),
+        pendingOld7
     };
 
 };

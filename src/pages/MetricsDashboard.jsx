@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StatCard } from '../components/metrics/StatCard';
-import { ClipboardList, TrendingUp, Clock } from 'lucide-react';
+import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
 
@@ -34,8 +34,8 @@ export const MetricsDashboard = () => {
     const statsConfig = [
         { title: 'Total de Reclamos', value: data.total, icon: ClipboardList, colorClass: 'bg-brand-blue' },
         { title: 'Tasa de Resolución', value: `${data.resolutionRate}%`, icon: TrendingUp, colorClass: 'bg-brand-green' },
-        { title: 'Tiempo Prom. Resolución', value: `${data.avgResolutionHours} hs`, icon: Clock, colorClass: 'bg-state-process' }
-  
+        { title: 'Tiempo Prom. Resolución', value: `${data.avgResolutionHours} hs`, icon: Clock, colorClass: 'bg-state-process' },
+        { title: 'Críticos (>7 días)', value: data.pendingOld7, icon: AlertTriangle, colorClass: 'bg-state-rejected' }
     ];
 
     return (
