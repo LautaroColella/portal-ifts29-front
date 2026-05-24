@@ -1,4 +1,4 @@
-import { differenceInDays, differenceInHours, parseISO } from 'date-fns';
+import { differenceInDays, differenceInHours, parseISO, format, subDays } from 'date-fns';
 
 export const calculateMetrics = (tickets) => {
     if (!tickets || tickets.length === 0) return null;
@@ -22,6 +22,7 @@ export const calculateMetrics = (tickets) => {
     let pendingOld7 = 0;
      
     const categoryCount = { ACADEMIC: 0, INSTITUTIONAL: 0, TECHNICAL: 0, GENERAL: 0 };
+    const ticketsByDate = {}; // Format: YYYY-MM-DD
 
     tickets.forEach(ticket => {
         const createdAt = parseISO(ticket.createdAt);
@@ -52,6 +53,11 @@ export const calculateMetrics = (tickets) => {
         if (categoryCount[ticket.category] !== undefined) {
             categoryCount[ticket.category]++;
         }
+
+        // Tickets por período
+        const dateKey = format(createdAt, 'yyyy-MM-dd');
+        ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + 1;
+
     });
 
     // Cálculo de promedios
@@ -72,13 +78,24 @@ export const calculateMetrics = (tickets) => {
         color: '#1E88E5'
     })).filter(i => i.value > 0);
 
+    const timeChartData = [];
+    for (let i = 13; i >= 0; i--) {
+        const d = subDays(now, i);
+        const dateKey = format(d, 'yyyy-MM-dd');
+        timeChartData.push({
+        date: format(d, 'dd/MM'),
+        tickets: ticketsByDate[dateKey] || 0
+        });
+    }
+    
     return {  
         total,
         resolutionRate,
         avgResolutionHours: Math.round(avgResolutionHours),
         pendingOld7,
         statusChartData,
-        categoryChartData
+        categoryChartData,
+        timeChartData
     };
 
 };

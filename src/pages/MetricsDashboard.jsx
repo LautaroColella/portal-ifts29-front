@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StatCard } from '../components/metrics/StatCard';
 import { StatusChart } from '../components/metrics/StatusChart';
 import { CategoryChart } from '../components/metrics/CategoryChart';
+import { TimeChart } from '../components/metrics/TimeChart';
 import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
@@ -62,6 +63,9 @@ export const MetricsDashboard = () => {
                 <div className="lg:col-span-1 min-h-[300px]">
                     <CategoryChart data={data.categoryChartData} />
                 </div>     
+                <div className="lg:col-span-1 min-h-[300px]">
+                    <TimeChart data={data.timeChartData} />
+                </div>
             </div>
         </div>
     );
