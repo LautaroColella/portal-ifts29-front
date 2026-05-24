@@ -27,4 +27,6 @@ dist-ssr
 # AI Context Files (Local Only)
 context/
 .context/
+.agents/
+agents/
 CLAUDE.md

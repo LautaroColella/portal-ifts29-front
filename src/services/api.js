@@ -65,5 +65,11 @@ function handleMockRequest(endpoint, options) {
     return mockApi.createTicket(body);
   }
 
+  // PATCH /api/tickets/:id/status
+  if (endpoint.match(/\/tickets\/\d+\/status/) && method === 'PATCH') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/status/)[1];
+    return mockApi.updateTicketStatus(id, body);
+  }
+
   throw new Error(`Endpoint no implementado: ${method} ${endpoint}`);
 }

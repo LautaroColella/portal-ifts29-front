@@ -9,8 +9,20 @@ export const TicketDetail = () => {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [statusUpdateError, setStatusUpdateError] = useState('');
+  const [statusUpdateSuccess, setStatusUpdateSuccess] = useState('');
 
-  // Fetch ticket details on component mount
+  const STATUSES = [
+    'OPEN',
+    'IN_PROGRESS',
+    'WAITING_FOR_STUDENT',
+    'WAITING_FOR_THIRD_PARTY',
+    'RESOLVED',
+    'CLOSED',
+    'CANCELLED',
+  ];
+
   useEffect(() => {
     const fetchTicketDetail = async () => {
       try {
@@ -38,18 +50,65 @@ export const TicketDetail = () => {
     fetchTicketDetail();
   }, [id]);
 
+  const handleStatusChange = async (newStatus) => {
+    try {
+      setStatusUpdateLoading(true);
+      setStatusUpdateError('');
+      setStatusUpdateSuccess('');
+
+      const response = await apiFetch(`/tickets/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      setTicket(response.data || response);
+      setStatusUpdateSuccess('Estado actualizado correctamente');
+    } catch (err) {
+      const errorMessage = (() => {
+        if (err.response?.data?.error) {
+          return err.response.data.error;
+        }
+        return err.message || 'Error al actualizar el estado del reclamo.';
+      })();
+      setStatusUpdateError(errorMessage);
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
+
   const getStatusBadgeColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
 
     if (statusLower === 'open') {
       return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    } else if (statusLower === 'in progress' || statusLower === 'in_progress') {
+    } else if (statusLower === 'in_progress' || statusLower === 'in progress') {
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    } else if (statusLower === 'waiting_for_student' || statusLower === 'waiting for student') {
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+    } else if (statusLower === 'waiting_for_third_party' || statusLower === 'waiting for third party') {
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+    } else if (statusLower === 'resolved') {
+      return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
     } else if (statusLower === 'closed') {
       return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    } else if (statusLower === 'cancelled') {
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
     }
 
     return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  };
+
+  const formatStatus = (status) => {
+    const statusMap = {
+      'OPEN': 'Abierto',
+      'IN_PROGRESS': 'En Proceso',
+      'WAITING_FOR_STUDENT': 'Esperando al Estudiante',
+      'WAITING_FOR_THIRD_PARTY': 'Esperando a Terceros',
+      'RESOLVED': 'Resuelto',
+      'CLOSED': 'Cerrado',
+      'CANCELLED': 'Cancelado',
+    };
+    return statusMap[status] || status;
   };
 
   const formatDate = (dateString) => {
@@ -120,9 +179,37 @@ export const TicketDetail = () => {
             <div className="text-right">
               <p className="text-sm text-text-secondary mb-2">Estado Actual</p>
               <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeColor(ticket.status)}`}>
-                {ticket.status}
+                {formatStatus(ticket.status)}
               </span>
             </div>
+          </div>
+
+          {/* Status Update Control */}
+          <div className="mb-6 pb-6 border-b border-gray-300 dark:border-gray-700">
+            <p className="text-xs font-semibold text-text-secondary uppercase mb-3">Actualizar Estado</p>
+            <div className="flex items-center gap-4">
+              <select
+                value={ticket.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={statusUpdateLoading}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-text-main focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {formatStatus(status)}
+                  </option>
+                ))}
+              </select>
+              {statusUpdateLoading && (
+                <p className="text-sm text-text-secondary">Actualizando...</p>
+              )}
+            </div>
+            {statusUpdateError && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">{statusUpdateError}</p>
+            )}
+            {statusUpdateSuccess && (
+              <p className="mt-2 text-sm text-green-600 dark:text-green-400">{statusUpdateSuccess}</p>
+            )}
           </div>
 
           {/* Title & Description */}

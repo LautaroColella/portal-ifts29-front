@@ -9,6 +9,8 @@ export const mockTickets = [
     status: 'OPEN',
     subject: 'Programación I',
     commission: '1K',
+    responsible: 'Prof. García',
+    commentsCount: 3,
     createdAt: new Date(Date.now() - 86400000),
     updatedAt: new Date(Date.now() - 86400000),
   },
@@ -21,6 +23,8 @@ export const mockTickets = [
     status: 'IN_PROGRESS',
     subject: null,
     commission: null,
+    responsible: 'Soporte IT',
+    commentsCount: 5,
     createdAt: new Date(Date.now() - 172800000),
     updatedAt: new Date(Date.now() - 86400000),
   },
@@ -33,6 +37,8 @@ export const mockTickets = [
     status: 'CLOSED',
     subject: 'Matemática II',
     commission: '2A',
+    responsible: 'Secretaría Académica',
+    commentsCount: 2,
     createdAt: new Date(Date.now() - 259200000),
     updatedAt: new Date(Date.now() - 172800000),
   },
@@ -45,6 +51,8 @@ export const mockTickets = [
     status: 'IN_PROGRESS',
     subject: 'Ingeniería de Software',
     commission: '3K',
+    responsible: 'Soporte IT',
+    commentsCount: 1,
     createdAt: new Date(Date.now() - 345600000),
     updatedAt: new Date(Date.now() - 259200000),
   },
@@ -57,6 +65,8 @@ export const mockTickets = [
     status: 'OPEN',
     subject: null,
     commission: null,
+    responsible: null,
+    commentsCount: 0,
     createdAt: new Date(Date.now() - 432000000),
     updatedAt: new Date(Date.now() - 432000000),
   },
@@ -170,6 +180,79 @@ export const mockApi = {
 
     return {
       data: ticket,
+    };
+  },
+
+  // PATCH /api/tickets/:id/status
+  updateTicketStatus: async (id, statusData) => {
+    await mockDelay(600);
+
+    const ticketIndex = mockTickets.findIndex((t) => t.id === parseInt(id));
+
+    if (ticketIndex === -1) {
+      throw {
+        response: {
+          status: 404,
+          data: { error: 'Ticket no encontrado' },
+        },
+      };
+    }
+
+    const VALID_STATUSES = [
+      'OPEN',
+      'IN_PROGRESS',
+      'WAITING_FOR_STUDENT',
+      'WAITING_FOR_THIRD_PARTY',
+      'RESOLVED',
+      'CLOSED',
+      'CANCELLED',
+    ];
+
+    if (!statusData || !statusData.status) {
+      throw {
+        response: {
+          status: 400,
+          data: { error: 'El estado del ticket es requerido' },
+        },
+      };
+    }
+
+    const newStatus = statusData.status.trim().toUpperCase();
+
+    if (!VALID_STATUSES.includes(newStatus)) {
+      throw {
+        response: {
+          status: 400,
+          data: { error: 'El estado del ticket es inválido' },
+        },
+      };
+    }
+
+    const ticket = mockTickets[ticketIndex];
+
+    const INVALID_TRANSITIONS = {
+      CLOSED: ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_STUDENT', 'WAITING_FOR_THIRD_PARTY', 'RESOLVED'],
+      CANCELLED: ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_STUDENT', 'WAITING_FOR_THIRD_PARTY', 'RESOLVED'],
+    };
+
+    if (INVALID_TRANSITIONS[ticket.status]?.includes(newStatus)) {
+      throw {
+        response: {
+          status: 400,
+          data: { error: `No se puede cambiar un ticket de estado ${ticket.status} a ${newStatus}` },
+        },
+      };
+    }
+
+    mockTickets[ticketIndex] = {
+      ...ticket,
+      status: newStatus,
+      updatedAt: new Date(),
+    };
+
+    return {
+      data: mockTickets[ticketIndex],
+      message: 'Estado actualizado exitosamente',
     };
   },
 };
