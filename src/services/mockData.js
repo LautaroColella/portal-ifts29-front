@@ -1,4 +1,21 @@
 // Mock data for testing frontend before backend is ready
+// Structure matches backend entities: Ticket, Comment, Message, TicketHistory
+
+export const mockUsers = {
+  1: { id: 1, name: 'Juan Pérez', email: 'juan@ifts29.edu.ar' },
+  2: { id: 2, name: 'María López', email: 'maria@ifts29.edu.ar' },
+  3: { id: 3, name: 'Carlos Rodríguez', email: 'carlos@ifts29.edu.ar' },
+  4: { id: 4, name: 'Ana Martínez', email: 'ana@ifts29.edu.ar' },
+  5: { id: 5, name: 'Luis Fernández', email: 'luis@ifts29.edu.ar' },
+  6: { id: 6, name: 'Prof. García', email: 'garcia@ifts29.edu.ar' },
+  7: { id: 7, name: 'Soporte IT', email: 'soporte@ifts29.edu.ar' },
+  8: { id: 8, name: 'Secretaría Académica', email: 'secretaria@ifts29.edu.ar' },
+  9: { id: 9, name: 'Dirección', email: 'direccion@ifts29.edu.ar' },
+  10: { id: 10, name: 'Coordinación Académica', email: 'coordinacion@ifts29.edu.ar' },
+  11: { id: 11, name: 'Administración', email: 'administracion@ifts29.edu.ar' },
+  12: { id: 12, name: 'Sistema', email: null },
+};
+
 export const mockTickets = [
   {
     id: 1,
@@ -9,11 +26,14 @@ export const mockTickets = [
     status: 'OPEN',
     subject: 'Programación I',
     commission: '1K',
-    responsible: 'Prof. García',
-    createdBy: 'Juan Pérez',
+    assignedTo: mockUsers[6],
+    createdBy: mockUsers[1],
     commentsCount: 3,
     createdAt: new Date(Date.now() - 86400000),
     updatedAt: new Date(Date.now() - 86400000),
+    resolvedAt: null,
+    closedAt: null,
+    metadata: null,
   },
   {
     id: 2,
@@ -24,11 +44,14 @@ export const mockTickets = [
     status: 'IN_PROGRESS',
     subject: null,
     commission: null,
-    responsible: 'Soporte IT',
-    createdBy: 'María López',
+    assignedTo: mockUsers[7],
+    createdBy: mockUsers[2],
     commentsCount: 5,
     createdAt: new Date(Date.now() - 172800000),
     updatedAt: new Date(Date.now() - 86400000),
+    resolvedAt: null,
+    closedAt: null,
+    metadata: null,
   },
   {
     id: 3,
@@ -39,11 +62,14 @@ export const mockTickets = [
     status: 'CLOSED',
     subject: 'Matemática II',
     commission: '2A',
-    responsible: 'Secretaría Académica',
-    createdBy: 'Carlos Rodríguez',
+    assignedTo: mockUsers[8],
+    createdBy: mockUsers[3],
     commentsCount: 2,
     createdAt: new Date(Date.now() - 259200000),
     updatedAt: new Date(Date.now() - 172800000),
+    resolvedAt: null,
+    closedAt: new Date(Date.now() - 172800000),
+    metadata: null,
   },
   {
     id: 4,
@@ -54,11 +80,14 @@ export const mockTickets = [
     status: 'IN_PROGRESS',
     subject: 'Ingeniería de Software',
     commission: '3K',
-    responsible: 'Soporte IT',
-    createdBy: 'Ana Martínez',
+    assignedTo: mockUsers[7],
+    createdBy: mockUsers[4],
     commentsCount: 1,
     createdAt: new Date(Date.now() - 345600000),
     updatedAt: new Date(Date.now() - 259200000),
+    resolvedAt: null,
+    closedAt: null,
+    metadata: null,
   },
   {
     id: 5,
@@ -69,40 +98,43 @@ export const mockTickets = [
     status: 'OPEN',
     subject: null,
     commission: null,
-    responsible: null,
-    createdBy: 'Luis Fernández',
+    assignedTo: null,
+    createdBy: mockUsers[5],
     commentsCount: 0,
     createdAt: new Date(Date.now() - 432000000),
     updatedAt: new Date(Date.now() - 432000000),
+    resolvedAt: null,
+    closedAt: null,
+    metadata: null,
   },
 ];
 
 export const mockComments = {
   1: [
-    { id: 1, ticketId: 1, author: 'Prof. García', content: 'Revisando el caso en el sistema.', createdAt: new Date(Date.now() - 43200000) },
-    { id: 2, ticketId: 1, author: 'Juan Pérez', content: 'Gracias, quedo a la espera.', createdAt: new Date(Date.now() - 36000000) },
-    { id: 3, ticketId: 1, author: 'Prof. García', content: 'La calificación ya fue cargada correctamente.', createdAt: new Date(Date.now() - 7200000) },
+    { id: 1, ticketId: 1, content: 'Revisando el caso en el sistema.', author: mockUsers[6], createdAt: new Date(Date.now() - 43200000) },
+    { id: 2, ticketId: 1, content: 'Gracias, quedo a la espera.', author: mockUsers[1], createdAt: new Date(Date.now() - 36000000) },
+    { id: 3, ticketId: 1, content: 'La calificación ya fue cargada correctamente.', author: mockUsers[6], createdAt: new Date(Date.now() - 7200000) },
   ],
   2: [
-    { id: 4, ticketId: 2, author: 'Soporte IT', content: 'Estamos investigando el problema de autenticación.', createdAt: new Date(Date.now() - 86400000) },
-    { id: 5, ticketId: 2, author: 'María López', content: 'Ok, avisen cuando tengan novedades.', createdAt: new Date(Date.now() - 72000000) },
+    { id: 4, ticketId: 2, content: 'Estamos investigando el problema de autenticación.', author: mockUsers[7], createdAt: new Date(Date.now() - 86400000) },
+    { id: 5, ticketId: 2, content: 'Ok, avisen cuando tengan novedades.', author: mockUsers[2], createdAt: new Date(Date.now() - 72000000) },
   ],
   3: [
-    { id: 6, ticketId: 3, author: 'Secretaría Académica', content: 'Solicitud procesada. Horario cambiado exitosamente.', createdAt: new Date(Date.now() - 172800000) },
+    { id: 6, ticketId: 3, content: 'Solicitud procesada. Horario cambiado exitosamente.', author: mockUsers[8], createdAt: new Date(Date.now() - 172800000) },
   ],
   4: [
-    { id: 7, ticketId: 4, author: 'Soporte IT', content: 'Se aumentó el límite de subida a 10MB.', createdAt: new Date(Date.now() - 259200000) },
+    { id: 7, ticketId: 4, content: 'Se aumentó el límite de subida a 10MB.', author: mockUsers[7], createdAt: new Date(Date.now() - 259200000) },
   ],
   5: [],
 };
 
 export const mockMessages = {
   1: [
-    { id: 1, ticketId: 1, author: 'Juan Pérez', content: 'Buen día, necesito ayuda con mi calificación.', createdAt: new Date(Date.now() - 80000000) },
-    { id: 2, ticketId: 1, author: 'Prof. García', content: 'Hola Juan, ¿podés enviarme el comprobante del examen?', createdAt: new Date(Date.now() - 50000000) },
+    { id: 1, ticketId: 1, content: 'Buen día, necesito ayuda con mi calificación.', author: mockUsers[1], createdAt: new Date(Date.now() - 80000000) },
+    { id: 2, ticketId: 1, content: 'Hola Juan, ¿podés enviarme el comprobante del examen?', author: mockUsers[6], createdAt: new Date(Date.now() - 50000000) },
   ],
   2: [
-    { id: 3, ticketId: 2, author: 'María López', content: 'No puedo acceder a Moodle desde hace 2 días.', createdAt: new Date(Date.now() - 150000000) },
+    { id: 3, ticketId: 2, content: 'No puedo acceder a Moodle desde hace 2 días.', author: mockUsers[2], createdAt: new Date(Date.now() - 150000000) },
   ],
   3: [],
   4: [],
@@ -111,32 +143,47 @@ export const mockMessages = {
 
 export const mockHistory = {
   1: [
-    { id: 1, ticketId: 1, author: 'Juan Pérez', action: 'Ticket creado', createdAt: new Date(Date.now() - 86400000) },
-    { id: 2, ticketId: 1, author: 'Sistema', action: 'Asignado a Prof. García', createdAt: new Date(Date.now() - 72000000) },
-    { id: 3, ticketId: 1, author: 'Prof. García', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 43200000) },
+    { id: 1, ticketId: 1, action: 'TICKET_CREATED', oldValue: null, newValue: null, description: 'Ticket creado', performedBy: mockUsers[1], createdAt: new Date(Date.now() - 86400000) },
+    { id: 2, ticketId: 1, action: 'ASSIGNED_CHANGED', oldValue: null, newValue: 'Prof. García', description: 'Asignado a Prof. García', performedBy: mockUsers[12], createdAt: new Date(Date.now() - 72000000) },
+    { id: 3, ticketId: 1, action: 'STATUS_CHANGED', oldValue: 'OPEN', newValue: 'IN_PROGRESS', description: 'Estado cambiado de Abierto a En Proceso', performedBy: mockUsers[6], createdAt: new Date(Date.now() - 43200000) },
   ],
   2: [
-    { id: 4, ticketId: 2, author: 'María López', action: 'Ticket creado', createdAt: new Date(Date.now() - 172800000) },
-    { id: 5, ticketId: 2, author: 'Sistema', action: 'Asignado a Soporte IT', createdAt: new Date(Date.now() - 150000000) },
-    { id: 6, ticketId: 2, author: 'Soporte IT', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 100000000) },
+    { id: 4, ticketId: 2, action: 'TICKET_CREATED', oldValue: null, newValue: null, description: 'Ticket creado', performedBy: mockUsers[2], createdAt: new Date(Date.now() - 172800000) },
+    { id: 5, ticketId: 2, action: 'ASSIGNED_CHANGED', oldValue: null, newValue: 'Soporte IT', description: 'Asignado a Soporte IT', performedBy: mockUsers[12], createdAt: new Date(Date.now() - 150000000) },
+    { id: 6, ticketId: 2, action: 'STATUS_CHANGED', oldValue: 'OPEN', newValue: 'IN_PROGRESS', description: 'Estado cambiado de Abierto a En Proceso', performedBy: mockUsers[7], createdAt: new Date(Date.now() - 100000000) },
   ],
   3: [
-    { id: 7, ticketId: 3, author: 'Carlos Rodríguez', action: 'Ticket creado', createdAt: new Date(Date.now() - 259200000) },
-    { id: 8, ticketId: 3, author: 'Secretaría Académica', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 200000000) },
-    { id: 9, ticketId: 3, author: 'Secretaría Académica', action: 'Estado cambiado a Cerrado', createdAt: new Date(Date.now() - 172800000) },
+    { id: 7, ticketId: 3, action: 'TICKET_CREATED', oldValue: null, newValue: null, description: 'Ticket creado', performedBy: mockUsers[3], createdAt: new Date(Date.now() - 259200000) },
+    { id: 8, ticketId: 3, action: 'ASSIGNED_CHANGED', oldValue: null, newValue: 'Secretaría Académica', description: 'Asignado a Secretaría Académica', performedBy: mockUsers[12], createdAt: new Date(Date.now() - 200000000) },
+    { id: 9, ticketId: 3, action: 'STATUS_CHANGED', oldValue: 'OPEN', newValue: 'IN_PROGRESS', description: 'Estado cambiado de Abierto a En Proceso', performedBy: mockUsers[8], createdAt: new Date(Date.now() - 200000000) },
+    { id: 10, ticketId: 3, action: 'STATUS_CHANGED', oldValue: 'IN_PROGRESS', newValue: 'CLOSED', description: 'Estado cambiado de En Proceso a Cerrado', performedBy: mockUsers[8], createdAt: new Date(Date.now() - 172800000) },
   ],
   4: [
-    { id: 10, ticketId: 4, author: 'Ana Martínez', action: 'Ticket creado', createdAt: new Date(Date.now() - 345600000) },
-    { id: 11, ticketId: 4, author: 'Soporte IT', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 300000000) },
+    { id: 11, ticketId: 4, action: 'TICKET_CREATED', oldValue: null, newValue: null, description: 'Ticket creado', performedBy: mockUsers[4], createdAt: new Date(Date.now() - 345600000) },
+    { id: 12, ticketId: 4, action: 'ASSIGNED_CHANGED', oldValue: null, newValue: 'Soporte IT', description: 'Asignado a Soporte IT', performedBy: mockUsers[12], createdAt: new Date(Date.now() - 300000000) },
+    { id: 13, ticketId: 4, action: 'STATUS_CHANGED', oldValue: 'OPEN', newValue: 'IN_PROGRESS', description: 'Estado cambiado de Abierto a En Proceso', performedBy: mockUsers[7], createdAt: new Date(Date.now() - 300000000) },
   ],
   5: [
-    { id: 12, ticketId: 5, author: 'Luis Fernández', action: 'Ticket creado', createdAt: new Date(Date.now() - 432000000) },
+    { id: 14, ticketId: 5, action: 'TICKET_CREATED', oldValue: null, newValue: null, description: 'Ticket creado', performedBy: mockUsers[5], createdAt: new Date(Date.now() - 432000000) },
   ],
 };
 
 // Mock API delay for more realistic testing
 export const mockDelay = (ms = 800) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+const formatStatus = (status) => {
+  const statusMap = {
+    'OPEN': 'Abierto',
+    'IN_PROGRESS': 'En Proceso',
+    'WAITING_FOR_STUDENT': 'Esperando Estudiante',
+    'WAITING_FOR_THIRD_PARTY': 'Esperando Terceros',
+    'RESOLVED': 'Resuelto',
+    'CLOSED': 'Cerrado',
+    'CANCELLED': 'Cancelado',
+  };
+  return statusMap[status] || status;
 };
 
 // Mock API responses
@@ -213,14 +260,30 @@ export const mockApi = {
       id: Math.max(...mockTickets.map((t) => t.id), 0) + 1,
       ...ticketData,
       status: 'OPEN',
-      createdBy: 'Usuario Actual',
+      assignedTo: null,
+      createdBy: mockUsers[1],
       createdAt: new Date(),
       updatedAt: new Date(),
+      resolvedAt: null,
+      closedAt: null,
+      metadata: null,
     };
 
     mockTickets.push(newTicket);
     mockComments[newTicket.id] = [];
     mockMessages[newTicket.id] = [];
+    mockHistory[newTicket.id] = [
+      {
+        id: Date.now(),
+        ticketId: newTicket.id,
+        action: 'TICKET_CREATED',
+        oldValue: null,
+        newValue: null,
+        description: 'Ticket creado',
+        performedBy: mockUsers[1],
+        createdAt: new Date(),
+      },
+    ];
 
     return {
       data: newTicket,
@@ -309,14 +372,31 @@ export const mockApi = {
       };
     }
 
-    mockTickets[ticketIndex] = {
+    const updatedTicket = {
       ...ticket,
       status: newStatus,
       updatedAt: new Date(),
+      resolvedAt: newStatus === 'RESOLVED' ? new Date() : ticket.resolvedAt,
+      closedAt: (newStatus === 'CLOSED' || newStatus === 'CANCELLED') ? new Date() : ticket.closedAt,
     };
 
+    mockTickets[ticketIndex] = updatedTicket;
+
+    if (mockHistory[ticket.id]) {
+      mockHistory[ticket.id].push({
+        id: Date.now(),
+        ticketId: ticket.id,
+        action: 'STATUS_CHANGED',
+        oldValue: ticket.status,
+        newValue: newStatus,
+        description: `Estado cambiado de ${formatStatus(ticket.status)} a ${formatStatus(newStatus)}`,
+        performedBy: mockUsers[12],
+        createdAt: new Date(),
+      });
+    }
+
     return {
-      data: mockTickets[ticketIndex],
+      data: updatedTicket,
       message: 'Estado actualizado exitosamente',
     };
   },
@@ -354,12 +434,25 @@ export const mockApi = {
     const newComment = {
       id: Date.now(),
       ticketId,
-      author: commentData.author || 'Usuario Actual',
+      author: mockUsers[1] || null,
       content: commentData.content.trim(),
       createdAt: new Date(),
     };
 
     mockComments[ticketId].push(newComment);
+
+    if (mockHistory[ticketId]) {
+      mockHistory[ticketId].push({
+        id: Date.now() + 1,
+        ticketId,
+        action: 'COMMENT_ADDED',
+        oldValue: null,
+        newValue: null,
+        description: 'Comentario agregado',
+        performedBy: mockUsers[1],
+        createdAt: new Date(),
+      });
+    }
 
     return {
       data: newComment,
@@ -400,12 +493,25 @@ export const mockApi = {
     const newMessage = {
       id: Date.now(),
       ticketId,
-      author: messageData.author || 'Usuario Actual',
+      author: mockUsers[1] || null,
       content: messageData.content.trim(),
       createdAt: new Date(),
     };
 
     mockMessages[ticketId].push(newMessage);
+
+    if (mockHistory[ticketId]) {
+      mockHistory[ticketId].push({
+        id: Date.now() + 1,
+        ticketId,
+        action: 'MESSAGE_ADDED',
+        oldValue: null,
+        newValue: null,
+        description: 'Mensaje agregado',
+        performedBy: mockUsers[1],
+        createdAt: new Date(),
+      });
+    }
 
     return {
       data: newMessage,

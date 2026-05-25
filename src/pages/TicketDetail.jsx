@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../services/api';
+import { mockUsers } from '../services/mockData';
 
 export const TicketDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export const TicketDetail = () => {
   const [comments, setComments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [history, setHistory] = useState([]);
+  const [sectionLoading, setSectionLoading] = useState({});
   const [newCommentAuthor, setNewCommentAuthor] = useState('');
   const [newCommentContent, setNewCommentContent] = useState('');
   const [newMessageAuthor, setNewMessageAuthor] = useState('');
@@ -28,14 +30,9 @@ export const TicketDetail = () => {
   const [responsibleSearch, setResponsibleSearch] = useState('');
   const [popupError, setPopupError] = useState('');
 
-  const RESPONSIBLES = [
-    'Prof. García',
-    'Soporte IT',
-    'Secretaría Académica',
-    'Dirección',
-    'Coordinación Académica',
-    'Administración',
-  ];
+  const RESPONSIBLES = Object.values(mockUsers)
+    .filter((u) => u.id !== 12 && u.id !== 1 && u.id !== 2 && u.id !== 3 && u.id !== 4 && u.id !== 5)
+    .map((u) => u.name);
 
   const STATUSES = [
     'OPEN',
@@ -47,8 +44,63 @@ export const TicketDetail = () => {
     'CANCELLED',
   ];
 
-  const toggleSection = (section) => {
-    setOpenSection(openSection === section ? null : section);
+  const toggleSection = async (section) => {
+    if (openSection === section) {
+      setOpenSection(null);
+      return;
+    }
+
+    try {
+      setOpenSection(section);
+      setSectionLoading((prev) => ({ ...prev, [section]: true }));
+
+      let endpoint;
+      if (section === 'comments') {
+        endpoint = `/tickets/${id}/comments`;
+      } else if (section === 'messages') {
+        endpoint = `/tickets/${id}/messages`;
+      } else if (section === 'history') {
+        endpoint = `/tickets/${id}/history`;
+      }
+
+      if (!endpoint) {
+        console.error(`Unknown section: ${section}`);
+        return;
+      }
+
+      let response;
+      try {
+        response = await apiFetch(endpoint);
+      } catch (fetchErr) {
+        console.error(`Fetch error for ${section}:`, fetchErr);
+        response = { data: [] };
+      }
+
+      const data = response?.data;
+
+      if (section === 'comments') {
+        setComments(Array.isArray(data) ? data : []);
+      } else if (section === 'messages') {
+        setMessages(Array.isArray(data) ? data : []);
+      } else if (section === 'history') {
+        setHistory(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error(`Unexpected error in toggleSection ${section}:`, err);
+      if (section === 'comments') {
+        setComments([]);
+      } else if (section === 'messages') {
+        setMessages([]);
+      } else if (section === 'history') {
+        setHistory([]);
+      }
+    } finally {
+      try {
+        setSectionLoading((prev) => ({ ...prev, [section]: false }));
+      } catch (e) {
+        console.error('Error updating section loading:', e);
+      }
+    }
   };
 
   useEffect(() => {
@@ -78,51 +130,6 @@ export const TicketDetail = () => {
     fetchTicketDetail();
   }, [id]);
 
-  useEffect(() => {
-    if (id && openSection === 'comments') {
-      fetchComments();
-    }
-  }, [id, openSection, fetchComments]);
-
-  useEffect(() => {
-    if (id && openSection === 'messages') {
-      fetchMessages();
-    }
-  }, [id, openSection, fetchMessages]);
-
-  useEffect(() => {
-    if (id && openSection === 'history') {
-      fetchHistory();
-    }
-  }, [id, openSection, fetchHistory]);
-
-  const fetchComments = useCallback(async () => {
-    try {
-      const response = await apiFetch(`/tickets/${id}/comments`);
-      setComments(response.data || []);
-    } catch (err) {
-      console.error('Error fetching comments:', err);
-    }
-  }, [id]);
-
-  const fetchMessages = useCallback(async () => {
-    try {
-      const response = await apiFetch(`/tickets/${id}/messages`);
-      setMessages(response.data || []);
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-    }
-  }, [id]);
-
-  const fetchHistory = useCallback(async () => {
-    try {
-      const response = await apiFetch(`/tickets/${id}/history`);
-      setHistory(response.data || []);
-    } catch (err) {
-      console.error('Error fetching history:', err);
-    }
-  }, [id]);
-
   const handleAddComment = async () => {
     if (!newCommentContent.trim()) {
       setCommentError('El contenido del comentario es obligatorio');
@@ -134,7 +141,6 @@ export const TicketDetail = () => {
       const response = await apiFetch(`/tickets/${id}/comments`, {
         method: 'POST',
         body: JSON.stringify({
-          author: newCommentAuthor.trim() || 'Usuario Actual',
           content: newCommentContent.trim(),
         }),
       });
@@ -164,7 +170,6 @@ export const TicketDetail = () => {
       const response = await apiFetch(`/tickets/${id}/messages`, {
         method: 'POST',
         body: JSON.stringify({
-          author: newMessageAuthor.trim() || 'Usuario Actual',
           content: newMessageContent.trim(),
         }),
       });
@@ -235,16 +240,24 @@ export const TicketDetail = () => {
   };
 
   const openResponsiblePopup = () => {
-    setSelectedResponsible(ticket.responsible || '');
-    setResponsibleSearch('');
-    setPopupError('');
-    setShowResponsiblePopup(true);
+    try {
+      setSelectedResponsible(ticket?.assignedTo?.name || '');
+      setResponsibleSearch('');
+      setPopupError('');
+      setShowResponsiblePopup(true);
+    } catch (err) {
+      console.error('Error opening responsible popup:', err);
+    }
   };
 
   const openStatusPopup = () => {
-    setSelectedStatus(ticket.status || '');
-    setPopupError('');
-    setShowStatusPopup(true);
+    try {
+      setSelectedStatus(ticket?.status || '');
+      setPopupError('');
+      setShowStatusPopup(true);
+    } catch (err) {
+      console.error('Error opening status popup:', err);
+    }
   };
 
   const handleUpdateResponsible = async () => {
@@ -255,7 +268,8 @@ export const TicketDetail = () => {
 
     try {
       setPopupError('');
-      setTicket({ ...ticket, responsible: selectedResponsible.trim() });
+      const responsibleUser = Object.values(mockUsers).find((u) => u.name === selectedResponsible.trim());
+      setTicket({ ...ticket, assignedTo: responsibleUser || null });
       setShowResponsiblePopup(false);
     } catch {
       setPopupError('Error al actualizar el responsable');
@@ -332,194 +346,228 @@ export const TicketDetail = () => {
 
       {/* Main Ticket Card */}
       <div className="flex-1 overflow-auto pr-4 pb-4">
-        <div className="border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700">
+        <div className="border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm">
           {/* Header: Responsable | Ticket ID | Estado */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-text-main">{ticket.responsible || 'Sin asignar'}</span>
-              <button onClick={openResponsiblePopup} className="text-gray-400 hover:text-primary-500 transition-colors">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.assignedTo?.name || 'Sin asignar'}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openResponsiblePopup();
+                }}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-primary-100 text-gray-500 hover:text-primary-600 transition-colors dark:bg-gray-700 dark:hover:bg-primary-900 dark:text-gray-400 dark:hover:text-primary-400"
+                title="Editar responsable"
+              >
                 <i className="fas fa-pencil-alt text-xs"></i>
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-text-main">Ticket {ticket.id}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">Ticket {ticket.id}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(ticket.status)}`}>
                 {formatStatus(ticket.status)}
               </span>
-              <button onClick={openStatusPopup} className="text-gray-400 hover:text-primary-500 transition-colors">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openStatusPopup();
+                }}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-primary-100 text-gray-500 hover:text-primary-600 transition-colors dark:bg-gray-700 dark:hover:bg-primary-900 dark:text-gray-400 dark:hover:text-primary-400"
+                title="Editar estado"
+              >
                 <i className="fas fa-pencil-alt text-xs"></i>
               </button>
             </div>
           </div>
 
           {/* Title */}
-          <div className="p-6 border-b border-gray-300 dark:border-gray-700">
-            <h3 className="text-xl font-bold text-text-main text-center">{ticket.title}</h3>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">{ticket.title}</h3>
           </div>
 
           {/* Description */}
-          <div className="p-6 border-b border-gray-300 dark:border-gray-700 min-h-[120px]">
-            <p className="text-text-main whitespace-pre-wrap">{ticket.description}</p>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 min-h-[120px]">
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
           </div>
 
           {/* Info Grid */}
           <div className="p-4 space-y-2">
             {/* Row 1: Creador | Fecha creación */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Creador</p>
-                <p className="text-sm text-text-main font-medium">{ticket.createdBy || 'Sin asignar'}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Creador</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.createdBy?.name || 'Sin asignar'}</p>
               </div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Fecha creación</p>
-                <p className="text-sm text-text-main font-medium">{formatDate(ticket.createdAt)}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Fecha creación</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{formatDate(ticket.createdAt)}</p>
               </div>
             </div>
 
             {/* Row 2: Categoría | Subcategoría */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Categoría</p>
-                <p className="text-sm text-text-main font-medium">{ticket.category || 'N/A'}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Categoría</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.category || 'N/A'}</p>
               </div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Subcategoría</p>
-                <p className="text-sm text-text-main font-medium">{ticket.subcategory || 'N/A'}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Subcategoría</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.subcategory || 'N/A'}</p>
               </div>
             </div>
 
             {/* Row 3: Materia | Comisión */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Materia</p>
-                <p className="text-sm text-text-main font-medium">{ticket.subject || 'N/A'}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Materia</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.subject || 'N/A'}</p>
               </div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
-                <p className="text-xs text-text-secondary">Comisión</p>
-                <p className="text-sm text-text-main font-medium">{ticket.commission || 'N/A'}</p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Comisión</p>
+                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.commission || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Collapsible Sections */}
-          <div className="border-t border-gray-300 dark:border-gray-700">
+          <div className="border-t border-gray-200 dark:border-gray-700">
             {/* Comments Section */}
-            <div className="border-b border-gray-300 dark:border-gray-700">
+            <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => toggleSection('comments')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <span className="text-sm font-medium text-text-main">Comentarios</span>
-                <i className={`fas fa-chevron-${openSection === 'comments' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Comentarios</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                  <i className={`fas fa-chevron-${openSection === 'comments' ? 'up' : 'down'} text-xs`}></i>
+                </span>
               </button>
               {openSection === 'comments' && (
                 <div className="px-4 pb-4 space-y-3">
-                  {/* Add Comment Form */}
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newCommentAuthor}
-                        onChange={(e) => setNewCommentAuthor(e.target.value)}
-                        placeholder="Nombre"
-                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                      />
-                      <button
-                        onClick={handleAddComment}
-                        className="px-3 py-1.5 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 transition-colors"
-                      >
-                        Agregar comentario <i className="fas fa-arrow-right ml-1"></i>
-                      </button>
-                    </div>
-                    <textarea
-                      value={newCommentContent}
-                      onChange={(e) => setNewCommentContent(e.target.value)}
-                      placeholder="Comentario"
-                      rows={2}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none"
-                    />
-                    {commentError && (
-                      <p className="text-red-600 text-xs">{commentError}</p>
-                    )}
-                  </div>
-
-                  {/* Comments List */}
-                  {comments.length === 0 ? (
-                    <p className="text-sm text-text-secondary italic text-center py-2">No hay comentarios aún.</p>
+                  {sectionLoading.comments ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando comentarios...</p>
                   ) : (
-                    <div className="space-y-2">
-                      {comments.map((comment) => (
-                        <div key={comment.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-text-main">{comment.author}</span>
-                            <span className="text-xs text-text-secondary">{formatDate(comment.createdAt)}</span>
-                          </div>
-                          <p className="text-sm text-text-main">{comment.content}</p>
+                    <>
+                      {/* Add Comment Form */}
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={newCommentAuthor}
+                            onChange={(e) => setNewCommentAuthor(e.target.value)}
+                            placeholder="Nombre"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={handleAddComment}
+                            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                          >
+                            Agregar <i className="fas fa-arrow-right text-xs"></i>
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                        <textarea
+                          value={newCommentContent}
+                          onChange={(e) => setNewCommentContent(e.target.value)}
+                          placeholder="Escribí tu comentario..."
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                        {commentError && (
+                          <p className="text-red-600 dark:text-red-400 text-xs font-medium">{commentError}</p>
+                        )}
+                      </div>
+
+                      {/* Comments List */}
+                      {comments.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay comentarios aún.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {comments.map((comment) => (
+                            <div key={comment.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{comment.author?.name || 'Sin asignar'}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(comment.createdAt)}</span>
+                              </div>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{comment.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
             </div>
 
             {/* Messages Section */}
-            <div className="border-b border-gray-300 dark:border-gray-700">
+            <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => toggleSection('messages')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <span className="text-sm font-medium text-text-main">Mensajes</span>
-                <i className={`fas fa-chevron-${openSection === 'messages' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Mensajes</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                  <i className={`fas fa-chevron-${openSection === 'messages' ? 'up' : 'down'} text-xs`}></i>
+                </span>
               </button>
               {openSection === 'messages' && (
                 <div className="px-4 pb-4 space-y-3">
-                  {/* Add Message Form */}
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newMessageAuthor}
-                        onChange={(e) => setNewMessageAuthor(e.target.value)}
-                        placeholder="Nombre"
-                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                      />
-                      <button
-                        onClick={handleAddMessage}
-                        className="px-3 py-1.5 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 transition-colors"
-                      >
-                        Agregar mensaje <i className="fas fa-arrow-right ml-1"></i>
-                      </button>
-                    </div>
-                    <textarea
-                      value={newMessageContent}
-                      onChange={(e) => setNewMessageContent(e.target.value)}
-                      placeholder="Mensaje"
-                      rows={2}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none"
-                    />
-                    {messageError && (
-                      <p className="text-red-600 text-xs">{messageError}</p>
-                    )}
-                  </div>
-
-                  {/* Messages List */}
-                  {messages.length === 0 ? (
-                    <p className="text-sm text-text-secondary italic text-center py-2">No hay mensajes aún.</p>
+                  {sectionLoading.messages ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando mensajes...</p>
                   ) : (
-                    <div className="space-y-2">
-                      {messages.map((message) => (
-                        <div key={message.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-text-main">{message.author}</span>
-                            <span className="text-xs text-text-secondary">{formatDate(message.createdAt)}</span>
-                          </div>
-                          <p className="text-sm text-text-main">{message.content}</p>
+                    <>
+                      {/* Add Message Form */}
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={newMessageAuthor}
+                            onChange={(e) => setNewMessageAuthor(e.target.value)}
+                            placeholder="Nombre"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={handleAddMessage}
+                            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                          >
+                            Agregar <i className="fas fa-arrow-right text-xs"></i>
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                        <textarea
+                          value={newMessageContent}
+                          onChange={(e) => setNewMessageContent(e.target.value)}
+                          placeholder="Escribí tu mensaje..."
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                        {messageError && (
+                          <p className="text-red-600 dark:text-red-400 text-xs font-medium">{messageError}</p>
+                        )}
+                      </div>
+
+                      {/* Messages List */}
+                      {messages.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay mensajes aún.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {messages.map((message) => (
+                            <div key={message.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{message.author?.name || 'Sin asignar'}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(message.createdAt)}</span>
+                              </div>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{message.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -529,23 +577,27 @@ export const TicketDetail = () => {
             <div>
               <button
                 onClick={() => toggleSection('history')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <span className="text-sm font-medium text-text-main">Historial</span>
-                <i className={`fas fa-chevron-${openSection === 'history' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Historial</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                  <i className={`fas fa-chevron-${openSection === 'history' ? 'up' : 'down'} text-xs`}></i>
+                </span>
               </button>
               {openSection === 'history' && (
                 <div className="px-4 pb-4 space-y-2">
-                  {history.length === 0 ? (
-                    <p className="text-sm text-text-secondary italic text-center py-2">No hay entradas en el historial.</p>
+                  {sectionLoading.history ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando historial...</p>
+                  ) : history.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay entradas en el historial.</p>
                   ) : (
                     history.map((entry) => (
-                      <div key={entry.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-text-secondary">{formatDate(entry.createdAt)}</span>
-                          <span className="text-xs font-medium text-text-main">{entry.author}</span>
+                      <div key={entry.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(entry.createdAt)}</span>
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white">{entry.performedBy?.name || 'Sistema'}</span>
                         </div>
-                        <p className="text-sm text-text-main">{entry.action}</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{entry.description}</p>
                       </div>
                     ))
                   )}
@@ -558,60 +610,64 @@ export const TicketDetail = () => {
 
       {/* Responsible Edit Popup */}
       {showResponsiblePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold text-text-main mb-4">Editar Responsable</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Editar Responsable</h3>
 
-            {/* Search Input */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                value={responsibleSearch}
-                onChange={(e) => setResponsibleSearch(e.target.value)}
-                placeholder="Buscar nombre"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            </div>
+              {/* Search Input */}
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  value={responsibleSearch}
+                  onChange={(e) => setResponsibleSearch(e.target.value)}
+                  placeholder="Buscar nombre"
+                  className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+              </div>
 
-            {/* Name List */}
-            <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-              {filteredResponsibles.map((responsible) => (
+              {/* Name List */}
+              <div className="space-y-1.5 mb-4 max-h-48 overflow-y-auto pr-1">
+                {filteredResponsibles.map((responsible) => (
+                  <button
+                    key={responsible}
+                    onClick={() => setSelectedResponsible(responsible)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      selectedResponsible === responsible
+                        ? 'bg-primary-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between">
+                      {responsible}
+                      {selectedResponsible === responsible && (
+                        <i className="fas fa-check text-sm"></i>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {popupError && (
+                <p className="text-red-600 dark:text-red-400 text-xs mb-3 font-medium">{popupError}</p>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-2">
                 <button
-                  key={responsible}
-                  onClick={() => setSelectedResponsible(responsible)}
-                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                    selectedResponsible === responsible
-                      ? 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200'
-                      : 'bg-gray-100 text-text-main hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
-                  }`}
+                  onClick={() => setShowResponsiblePopup(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
-                  {responsible}
-                  {selectedResponsible === responsible && (
-                    <i className="fas fa-check ml-2 text-primary-500"></i>
-                  )}
+                  Cancelar
                 </button>
-              ))}
-            </div>
-
-            {popupError && (
-              <p className="text-red-600 text-xs mb-3">{popupError}</p>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowResponsiblePopup(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateResponsible}
-                className="px-4 py-2 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-2"
-              >
-                Actualizar <i className="fas fa-arrow-right"></i>
-              </button>
+                <button
+                  onClick={handleUpdateResponsible}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                >
+                  Actualizar <i className="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -619,48 +675,52 @@ export const TicketDetail = () => {
 
       {/* Status Edit Popup */}
       {showStatusPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold text-text-main mb-4">Editar Estado</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Editar Estado</h3>
 
-            {/* Status Grid */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {STATUSES.map((status) => (
+              {/* Status Grid */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {STATUSES.map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setSelectedStatus(status)}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      selectedStatus === status
+                        ? 'bg-primary-500 text-white shadow-md scale-105'
+                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200'
+                    }`}
+                  >
+                    <span className="flex items-center justify-center gap-1">
+                      {formatStatus(status)}
+                      {selectedStatus === status && (
+                        <i className="fas fa-check text-xs"></i>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {popupError && (
+                <p className="text-red-600 dark:text-red-400 text-xs mb-3 font-medium">{popupError}</p>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-2">
                 <button
-                  key={status}
-                  onClick={() => setSelectedStatus(status)}
-                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                    selectedStatus === status
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 text-text-main hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
-                  }`}
+                  onClick={() => setShowStatusPopup(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
-                  {formatStatus(status)}
-                  {selectedStatus === status && (
-                    <i className="fas fa-check ml-1"></i>
-                  )}
+                  Cancelar
                 </button>
-              ))}
-            </div>
-
-            {popupError && (
-              <p className="text-red-600 text-xs mb-3">{popupError}</p>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowStatusPopup(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateStatus}
-                className="px-4 py-2 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-2"
-              >
-                Actualizar <i className="fas fa-arrow-right"></i>
-              </button>
+                <button
+                  onClick={handleUpdateStatus}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                >
+                  Actualizar <i className="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
