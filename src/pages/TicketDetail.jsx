@@ -21,6 +21,32 @@ export const TicketDetail = () => {
   const [commentError, setCommentError] = useState('');
   const [messageError, setMessageError] = useState('');
 
+  const [showResponsiblePopup, setShowResponsiblePopup] = useState(false);
+  const [showStatusPopup, setShowStatusPopup] = useState(false);
+  const [selectedResponsible, setSelectedResponsible] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [responsibleSearch, setResponsibleSearch] = useState('');
+  const [popupError, setPopupError] = useState('');
+
+  const RESPONSIBLES = [
+    'Prof. García',
+    'Soporte IT',
+    'Secretaría Académica',
+    'Dirección',
+    'Coordinación Académica',
+    'Administración',
+  ];
+
+  const STATUSES = [
+    'OPEN',
+    'IN_PROGRESS',
+    'WAITING_FOR_STUDENT',
+    'WAITING_FOR_THIRD_PARTY',
+    'RESOLVED',
+    'CLOSED',
+    'CANCELLED',
+  ];
+
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -208,6 +234,64 @@ export const TicketDetail = () => {
     }
   };
 
+  const openResponsiblePopup = () => {
+    setSelectedResponsible(ticket.responsible || '');
+    setResponsibleSearch('');
+    setPopupError('');
+    setShowResponsiblePopup(true);
+  };
+
+  const openStatusPopup = () => {
+    setSelectedStatus(ticket.status || '');
+    setPopupError('');
+    setShowStatusPopup(true);
+  };
+
+  const handleUpdateResponsible = async () => {
+    if (!selectedResponsible.trim()) {
+      setPopupError('Debes seleccionar un responsable');
+      return;
+    }
+
+    try {
+      setPopupError('');
+      setTicket({ ...ticket, responsible: selectedResponsible.trim() });
+      setShowResponsiblePopup(false);
+    } catch {
+      setPopupError('Error al actualizar el responsable');
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedStatus) {
+      setPopupError('Debes seleccionar un estado');
+      return;
+    }
+
+    try {
+      setPopupError('');
+      const response = await apiFetch(`/tickets/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: selectedStatus }),
+      });
+
+      setTicket(response.data || response);
+      setShowStatusPopup(false);
+    } catch (err) {
+      const errorMessage = (() => {
+        if (err.response?.data?.error) {
+          return err.response.data.error;
+        }
+        return err.message || 'Error al actualizar el estado.';
+      })();
+      setPopupError(errorMessage);
+    }
+  };
+
+  const filteredResponsibles = RESPONSIBLES.filter((r) =>
+    r.toLowerCase().includes(responsibleSearch.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
@@ -252,8 +336,8 @@ export const TicketDetail = () => {
           {/* Header: Responsable | Ticket ID | Estado */}
           <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-text-main">Responsable</span>
-              <button className="text-gray-400 hover:text-primary-500 transition-colors">
+              <span className="text-sm font-medium text-text-main">{ticket.responsible || 'Sin asignar'}</span>
+              <button onClick={openResponsiblePopup} className="text-gray-400 hover:text-primary-500 transition-colors">
                 <i className="fas fa-pencil-alt text-xs"></i>
               </button>
             </div>
@@ -264,7 +348,7 @@ export const TicketDetail = () => {
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(ticket.status)}`}>
                 {formatStatus(ticket.status)}
               </span>
-              <button className="text-gray-400 hover:text-primary-500 transition-colors">
+              <button onClick={openStatusPopup} className="text-gray-400 hover:text-primary-500 transition-colors">
                 <i className="fas fa-pencil-alt text-xs"></i>
               </button>
             </div>
@@ -471,6 +555,116 @@ export const TicketDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Responsible Edit Popup */}
+      {showResponsiblePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold text-text-main mb-4">Editar Responsable</h3>
+
+            {/* Search Input */}
+            <div className="relative mb-4">
+              <input
+                type="text"
+                value={responsibleSearch}
+                onChange={(e) => setResponsibleSearch(e.target.value)}
+                placeholder="Buscar nombre"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+              <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+
+            {/* Name List */}
+            <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+              {filteredResponsibles.map((responsible) => (
+                <button
+                  key={responsible}
+                  onClick={() => setSelectedResponsible(responsible)}
+                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                    selectedResponsible === responsible
+                      ? 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200'
+                      : 'bg-gray-100 text-text-main hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {responsible}
+                  {selectedResponsible === responsible && (
+                    <i className="fas fa-check ml-2 text-primary-500"></i>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {popupError && (
+              <p className="text-red-600 text-xs mb-3">{popupError}</p>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowResponsiblePopup(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateResponsible}
+                className="px-4 py-2 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-2"
+              >
+                Actualizar <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Edit Popup */}
+      {showStatusPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold text-text-main mb-4">Editar Estado</h3>
+
+            {/* Status Grid */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {STATUSES.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setSelectedStatus(status)}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    selectedStatus === status
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 text-text-main hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {formatStatus(status)}
+                  {selectedStatus === status && (
+                    <i className="fas fa-check ml-1"></i>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {popupError && (
+              <p className="text-red-600 text-xs mb-3">{popupError}</p>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowStatusPopup(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateStatus}
+                className="px-4 py-2 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-2"
+              >
+                Actualizar <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
