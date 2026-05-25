@@ -16,7 +16,6 @@ function App() {
           <Route path="reclamos" element={<TicketsList />} />
           <Route path="reclamos/create" element={<CreateTicket />} />
           <Route path="reclamos/:id" element={<TicketDetail />} />
-          <Route path="dashboard" element={<Dashboard />} />
           <Route path="reportes" element={<MetricsDashboard />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="*" element={<Navigate to="/" replace />} />

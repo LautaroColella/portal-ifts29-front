@@ -48,7 +48,7 @@ export const Sidebar = ({ isOpen }) => {
   const menuItems = [
     { icon: Home, label: 'Inicio', path: '/' },
     { icon: ClipboardList, label: 'Reclamos', path: '/reclamos' },
-    { icon: BarChart2, label: 'Reportes', path: '/dashboard' },
+    { icon: BarChart2, label: 'Reportes', path: '/reportes' },
     { icon: HelpCircle, label: 'Ayuda', path: '/ayuda' }
   ];
 
