@@ -13,6 +13,7 @@ export const TicketDetail = () => {
 
   const [comments, setComments] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [history, setHistory] = useState([]);
   const [newCommentAuthor, setNewCommentAuthor] = useState('');
   const [newCommentContent, setNewCommentContent] = useState('');
   const [newMessageAuthor, setNewMessageAuthor] = useState('');
@@ -63,6 +64,12 @@ export const TicketDetail = () => {
     }
   }, [id, openSection, fetchMessages]);
 
+  useEffect(() => {
+    if (id && openSection === 'history') {
+      fetchHistory();
+    }
+  }, [id, openSection, fetchHistory]);
+
   const fetchComments = useCallback(async () => {
     try {
       const response = await apiFetch(`/tickets/${id}/comments`);
@@ -78,6 +85,15 @@ export const TicketDetail = () => {
       setMessages(response.data || []);
     } catch (err) {
       console.error('Error fetching messages:', err);
+    }
+  }, [id]);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await apiFetch(`/tickets/${id}/history`);
+      setHistory(response.data || []);
+    } catch (err) {
+      console.error('Error fetching history:', err);
     }
   }, [id]);
 
@@ -435,8 +451,20 @@ export const TicketDetail = () => {
                 <i className={`fas fa-chevron-${openSection === 'history' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
               </button>
               {openSection === 'history' && (
-                <div className="px-4 pb-4">
-                  <p className="text-sm text-text-secondary italic">Sección de historial - Próximamente</p>
+                <div className="px-4 pb-4 space-y-2">
+                  {history.length === 0 ? (
+                    <p className="text-sm text-text-secondary italic text-center py-2">No hay entradas en el historial.</p>
+                  ) : (
+                    history.map((entry) => (
+                      <div key={entry.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-text-secondary">{formatDate(entry.createdAt)}</span>
+                          <span className="text-xs font-medium text-text-main">{entry.author}</span>
+                        </div>
+                        <p className="text-sm text-text-main">{entry.action}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

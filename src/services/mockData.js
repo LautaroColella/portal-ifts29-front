@@ -109,6 +109,31 @@ export const mockMessages = {
   5: [],
 };
 
+export const mockHistory = {
+  1: [
+    { id: 1, ticketId: 1, author: 'Juan Pérez', action: 'Ticket creado', createdAt: new Date(Date.now() - 86400000) },
+    { id: 2, ticketId: 1, author: 'Sistema', action: 'Asignado a Prof. García', createdAt: new Date(Date.now() - 72000000) },
+    { id: 3, ticketId: 1, author: 'Prof. García', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 43200000) },
+  ],
+  2: [
+    { id: 4, ticketId: 2, author: 'María López', action: 'Ticket creado', createdAt: new Date(Date.now() - 172800000) },
+    { id: 5, ticketId: 2, author: 'Sistema', action: 'Asignado a Soporte IT', createdAt: new Date(Date.now() - 150000000) },
+    { id: 6, ticketId: 2, author: 'Soporte IT', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 100000000) },
+  ],
+  3: [
+    { id: 7, ticketId: 3, author: 'Carlos Rodríguez', action: 'Ticket creado', createdAt: new Date(Date.now() - 259200000) },
+    { id: 8, ticketId: 3, author: 'Secretaría Académica', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 200000000) },
+    { id: 9, ticketId: 3, author: 'Secretaría Académica', action: 'Estado cambiado a Cerrado', createdAt: new Date(Date.now() - 172800000) },
+  ],
+  4: [
+    { id: 10, ticketId: 4, author: 'Ana Martínez', action: 'Ticket creado', createdAt: new Date(Date.now() - 345600000) },
+    { id: 11, ticketId: 4, author: 'Soporte IT', action: 'Estado cambiado a En Proceso', createdAt: new Date(Date.now() - 300000000) },
+  ],
+  5: [
+    { id: 12, ticketId: 5, author: 'Luis Fernández', action: 'Ticket creado', createdAt: new Date(Date.now() - 432000000) },
+  ],
+};
+
 // Mock API delay for more realistic testing
 export const mockDelay = (ms = 800) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -385,6 +410,17 @@ export const mockApi = {
     return {
       data: newMessage,
       message: 'Mensaje creado exitosamente',
+    };
+  },
+
+  // GET /api/tickets/:id/history
+  getHistory: async (id) => {
+    await mockDelay();
+
+    const history = mockHistory[parseInt(id)] || [];
+
+    return {
+      data: history,
     };
   },
 };

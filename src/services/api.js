@@ -95,5 +95,11 @@ function handleMockRequest(endpoint, options) {
     return mockApi.createMessage(id, body);
   }
 
+  // GET /api/tickets/:id/history
+  if (endpoint.match(/\/tickets\/\d+\/history/) && method === 'GET') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/history/)[1];
+    return mockApi.getHistory(id);
+  }
+
   throw new Error(`Endpoint no implementado: ${method} ${endpoint}`);
 }
