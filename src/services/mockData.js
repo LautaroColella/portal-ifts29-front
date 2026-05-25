@@ -10,6 +10,7 @@ export const mockTickets = [
     subject: 'Programación I',
     commission: '1K',
     responsible: 'Prof. García',
+    createdBy: 'Juan Pérez',
     commentsCount: 3,
     createdAt: new Date(Date.now() - 86400000),
     updatedAt: new Date(Date.now() - 86400000),
@@ -24,6 +25,7 @@ export const mockTickets = [
     subject: null,
     commission: null,
     responsible: 'Soporte IT',
+    createdBy: 'María López',
     commentsCount: 5,
     createdAt: new Date(Date.now() - 172800000),
     updatedAt: new Date(Date.now() - 86400000),
@@ -38,6 +40,7 @@ export const mockTickets = [
     subject: 'Matemática II',
     commission: '2A',
     responsible: 'Secretaría Académica',
+    createdBy: 'Carlos Rodríguez',
     commentsCount: 2,
     createdAt: new Date(Date.now() - 259200000),
     updatedAt: new Date(Date.now() - 172800000),
@@ -52,6 +55,7 @@ export const mockTickets = [
     subject: 'Ingeniería de Software',
     commission: '3K',
     responsible: 'Soporte IT',
+    createdBy: 'Ana Martínez',
     commentsCount: 1,
     createdAt: new Date(Date.now() - 345600000),
     updatedAt: new Date(Date.now() - 259200000),
@@ -66,11 +70,44 @@ export const mockTickets = [
     subject: null,
     commission: null,
     responsible: null,
+    createdBy: 'Luis Fernández',
     commentsCount: 0,
     createdAt: new Date(Date.now() - 432000000),
     updatedAt: new Date(Date.now() - 432000000),
   },
 ];
+
+export const mockComments = {
+  1: [
+    { id: 1, ticketId: 1, author: 'Prof. García', content: 'Revisando el caso en el sistema.', createdAt: new Date(Date.now() - 43200000) },
+    { id: 2, ticketId: 1, author: 'Juan Pérez', content: 'Gracias, quedo a la espera.', createdAt: new Date(Date.now() - 36000000) },
+    { id: 3, ticketId: 1, author: 'Prof. García', content: 'La calificación ya fue cargada correctamente.', createdAt: new Date(Date.now() - 7200000) },
+  ],
+  2: [
+    { id: 4, ticketId: 2, author: 'Soporte IT', content: 'Estamos investigando el problema de autenticación.', createdAt: new Date(Date.now() - 86400000) },
+    { id: 5, ticketId: 2, author: 'María López', content: 'Ok, avisen cuando tengan novedades.', createdAt: new Date(Date.now() - 72000000) },
+  ],
+  3: [
+    { id: 6, ticketId: 3, author: 'Secretaría Académica', content: 'Solicitud procesada. Horario cambiado exitosamente.', createdAt: new Date(Date.now() - 172800000) },
+  ],
+  4: [
+    { id: 7, ticketId: 4, author: 'Soporte IT', content: 'Se aumentó el límite de subida a 10MB.', createdAt: new Date(Date.now() - 259200000) },
+  ],
+  5: [],
+};
+
+export const mockMessages = {
+  1: [
+    { id: 1, ticketId: 1, author: 'Juan Pérez', content: 'Buen día, necesito ayuda con mi calificación.', createdAt: new Date(Date.now() - 80000000) },
+    { id: 2, ticketId: 1, author: 'Prof. García', content: 'Hola Juan, ¿podés enviarme el comprobante del examen?', createdAt: new Date(Date.now() - 50000000) },
+  ],
+  2: [
+    { id: 3, ticketId: 2, author: 'María López', content: 'No puedo acceder a Moodle desde hace 2 días.', createdAt: new Date(Date.now() - 150000000) },
+  ],
+  3: [],
+  4: [],
+  5: [],
+};
 
 // Mock API delay for more realistic testing
 export const mockDelay = (ms = 800) => {
@@ -151,11 +188,14 @@ export const mockApi = {
       id: Math.max(...mockTickets.map((t) => t.id), 0) + 1,
       ...ticketData,
       status: 'OPEN',
+      createdBy: 'Usuario Actual',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     mockTickets.push(newTicket);
+    mockComments[newTicket.id] = [];
+    mockMessages[newTicket.id] = [];
 
     return {
       data: newTicket,
@@ -253,6 +293,98 @@ export const mockApi = {
     return {
       data: mockTickets[ticketIndex],
       message: 'Estado actualizado exitosamente',
+    };
+  },
+
+  // GET /api/tickets/:id/comments
+  getComments: async (id) => {
+    await mockDelay();
+
+    const comments = mockComments[parseInt(id)] || [];
+
+    return {
+      data: comments,
+    };
+  },
+
+  // POST /api/tickets/:id/comments
+  createComment: async (id, commentData) => {
+    await mockDelay(600);
+
+    const ticketId = parseInt(id);
+
+    if (!mockComments[ticketId]) {
+      mockComments[ticketId] = [];
+    }
+
+    if (!commentData || !commentData.content || !commentData.content.trim()) {
+      throw {
+        response: {
+          status: 400,
+          data: { error: 'El contenido del comentario es obligatorio' },
+        },
+      };
+    }
+
+    const newComment = {
+      id: Date.now(),
+      ticketId,
+      author: commentData.author || 'Usuario Actual',
+      content: commentData.content.trim(),
+      createdAt: new Date(),
+    };
+
+    mockComments[ticketId].push(newComment);
+
+    return {
+      data: newComment,
+      message: 'Comentario creado exitosamente',
+    };
+  },
+
+  // GET /api/tickets/:id/messages
+  getMessages: async (id) => {
+    await mockDelay();
+
+    const messages = mockMessages[parseInt(id)] || [];
+
+    return {
+      data: messages,
+    };
+  },
+
+  // POST /api/tickets/:id/messages
+  createMessage: async (id, messageData) => {
+    await mockDelay(600);
+
+    const ticketId = parseInt(id);
+
+    if (!mockMessages[ticketId]) {
+      mockMessages[ticketId] = [];
+    }
+
+    if (!messageData || !messageData.content || !messageData.content.trim()) {
+      throw {
+        response: {
+          status: 400,
+          data: { error: 'El contenido del mensaje es obligatorio' },
+        },
+      };
+    }
+
+    const newMessage = {
+      id: Date.now(),
+      ticketId,
+      author: messageData.author || 'Usuario Actual',
+      content: messageData.content.trim(),
+      createdAt: new Date(),
+    };
+
+    mockMessages[ticketId].push(newMessage);
+
+    return {
+      data: newMessage,
+      message: 'Mensaje creado exitosamente',
     };
   },
 };

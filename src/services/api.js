@@ -71,5 +71,29 @@ function handleMockRequest(endpoint, options) {
     return mockApi.updateTicketStatus(id, body);
   }
 
+  // GET /api/tickets/:id/comments
+  if (endpoint.match(/\/tickets\/\d+\/comments/) && method === 'GET') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/comments/)[1];
+    return mockApi.getComments(id);
+  }
+
+  // POST /api/tickets/:id/comments
+  if (endpoint.match(/\/tickets\/\d+\/comments/) && method === 'POST') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/comments/)[1];
+    return mockApi.createComment(id, body);
+  }
+
+  // GET /api/tickets/:id/messages
+  if (endpoint.match(/\/tickets\/\d+\/messages/) && method === 'GET') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/messages/)[1];
+    return mockApi.getMessages(id);
+  }
+
+  // POST /api/tickets/:id/messages
+  if (endpoint.match(/\/tickets\/\d+\/messages/) && method === 'POST') {
+    const id = endpoint.match(/\/tickets\/(\d+)\/messages/)[1];
+    return mockApi.createMessage(id, body);
+  }
+
   throw new Error(`Endpoint no implementado: ${method} ${endpoint}`);
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../services/api';
 
@@ -10,6 +10,15 @@ export const TicketDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openSection, setOpenSection] = useState(null);
+
+  const [comments, setComments] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [newCommentAuthor, setNewCommentAuthor] = useState('');
+  const [newCommentContent, setNewCommentContent] = useState('');
+  const [newMessageAuthor, setNewMessageAuthor] = useState('');
+  const [newMessageContent, setNewMessageContent] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [messageError, setMessageError] = useState('');
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -41,6 +50,96 @@ export const TicketDetail = () => {
 
     fetchTicketDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (id && openSection === 'comments') {
+      fetchComments();
+    }
+  }, [id, openSection, fetchComments]);
+
+  useEffect(() => {
+    if (id && openSection === 'messages') {
+      fetchMessages();
+    }
+  }, [id, openSection, fetchMessages]);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const response = await apiFetch(`/tickets/${id}/comments`);
+      setComments(response.data || []);
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+    }
+  }, [id]);
+
+  const fetchMessages = useCallback(async () => {
+    try {
+      const response = await apiFetch(`/tickets/${id}/messages`);
+      setMessages(response.data || []);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+    }
+  }, [id]);
+
+  const handleAddComment = async () => {
+    if (!newCommentContent.trim()) {
+      setCommentError('El contenido del comentario es obligatorio');
+      return;
+    }
+
+    try {
+      setCommentError('');
+      const response = await apiFetch(`/tickets/${id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          author: newCommentAuthor.trim() || 'Usuario Actual',
+          content: newCommentContent.trim(),
+        }),
+      });
+
+      setComments([...comments, response.data]);
+      setNewCommentAuthor('');
+      setNewCommentContent('');
+    } catch (err) {
+      const errorMessage = (() => {
+        if (err.response?.data?.error) {
+          return err.response.data.error;
+        }
+        return err.message || 'Error al agregar el comentario.';
+      })();
+      setCommentError(errorMessage);
+    }
+  };
+
+  const handleAddMessage = async () => {
+    if (!newMessageContent.trim()) {
+      setMessageError('El contenido del mensaje es obligatorio');
+      return;
+    }
+
+    try {
+      setMessageError('');
+      const response = await apiFetch(`/tickets/${id}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({
+          author: newMessageAuthor.trim() || 'Usuario Actual',
+          content: newMessageContent.trim(),
+        }),
+      });
+
+      setMessages([...messages, response.data]);
+      setNewMessageAuthor('');
+      setNewMessageContent('');
+    } catch (err) {
+      const errorMessage = (() => {
+        if (err.response?.data?.error) {
+          return err.response.data.error;
+        }
+        return err.message || 'Error al agregar el mensaje.';
+      })();
+      setMessageError(errorMessage);
+    }
+  };
 
   const getStatusBadgeColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
@@ -216,8 +315,52 @@ export const TicketDetail = () => {
                 <i className={`fas fa-chevron-${openSection === 'comments' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
               </button>
               {openSection === 'comments' && (
-                <div className="px-4 pb-4">
-                  <p className="text-sm text-text-secondary italic">Sección de comentarios - Próximamente</p>
+                <div className="px-4 pb-4 space-y-3">
+                  {/* Add Comment Form */}
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newCommentAuthor}
+                        onChange={(e) => setNewCommentAuthor(e.target.value)}
+                        placeholder="Nombre"
+                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      />
+                      <button
+                        onClick={handleAddComment}
+                        className="px-3 py-1.5 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 transition-colors"
+                      >
+                        Agregar comentario <i className="fas fa-arrow-right ml-1"></i>
+                      </button>
+                    </div>
+                    <textarea
+                      value={newCommentContent}
+                      onChange={(e) => setNewCommentContent(e.target.value)}
+                      placeholder="Comentario"
+                      rows={2}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none"
+                    />
+                    {commentError && (
+                      <p className="text-red-600 text-xs">{commentError}</p>
+                    )}
+                  </div>
+
+                  {/* Comments List */}
+                  {comments.length === 0 ? (
+                    <p className="text-sm text-text-secondary italic text-center py-2">No hay comentarios aún.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-text-main">{comment.author}</span>
+                            <span className="text-xs text-text-secondary">{formatDate(comment.createdAt)}</span>
+                          </div>
+                          <p className="text-sm text-text-main">{comment.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -232,8 +375,52 @@ export const TicketDetail = () => {
                 <i className={`fas fa-chevron-${openSection === 'messages' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
               </button>
               {openSection === 'messages' && (
-                <div className="px-4 pb-4">
-                  <p className="text-sm text-text-secondary italic">Sección de mensajes - Próximamente</p>
+                <div className="px-4 pb-4 space-y-3">
+                  {/* Add Message Form */}
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newMessageAuthor}
+                        onChange={(e) => setNewMessageAuthor(e.target.value)}
+                        placeholder="Nombre"
+                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      />
+                      <button
+                        onClick={handleAddMessage}
+                        className="px-3 py-1.5 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 transition-colors"
+                      >
+                        Agregar mensaje <i className="fas fa-arrow-right ml-1"></i>
+                      </button>
+                    </div>
+                    <textarea
+                      value={newMessageContent}
+                      onChange={(e) => setNewMessageContent(e.target.value)}
+                      placeholder="Mensaje"
+                      rows={2}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none"
+                    />
+                    {messageError && (
+                      <p className="text-red-600 text-xs">{messageError}</p>
+                    )}
+                  </div>
+
+                  {/* Messages List */}
+                  {messages.length === 0 ? (
+                    <p className="text-sm text-text-secondary italic text-center py-2">No hay mensajes aún.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {messages.map((message) => (
+                        <div key={message.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-text-main">{message.author}</span>
+                            <span className="text-xs text-text-secondary">{formatDate(message.createdAt)}</span>
+                          </div>
+                          <p className="text-sm text-text-main">{message.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
