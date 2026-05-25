@@ -9,19 +9,11 @@ export const TicketDetail = () => {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
-  const [statusUpdateError, setStatusUpdateError] = useState('');
-  const [statusUpdateSuccess, setStatusUpdateSuccess] = useState('');
+  const [openSection, setOpenSection] = useState(null);
 
-  const STATUSES = [
-    'OPEN',
-    'IN_PROGRESS',
-    'WAITING_FOR_STUDENT',
-    'WAITING_FOR_THIRD_PARTY',
-    'RESOLVED',
-    'CLOSED',
-    'CANCELLED',
-  ];
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
 
   useEffect(() => {
     const fetchTicketDetail = async () => {
@@ -50,32 +42,6 @@ export const TicketDetail = () => {
     fetchTicketDetail();
   }, [id]);
 
-  const handleStatusChange = async (newStatus) => {
-    try {
-      setStatusUpdateLoading(true);
-      setStatusUpdateError('');
-      setStatusUpdateSuccess('');
-
-      const response = await apiFetch(`/tickets/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      setTicket(response.data || response);
-      setStatusUpdateSuccess('Estado actualizado correctamente');
-    } catch (err) {
-      const errorMessage = (() => {
-        if (err.response?.data?.error) {
-          return err.response.data.error;
-        }
-        return err.message || 'Error al actualizar el estado del reclamo.';
-      })();
-      setStatusUpdateError(errorMessage);
-    } finally {
-      setStatusUpdateLoading(false);
-    }
-  };
-
   const getStatusBadgeColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
 
@@ -102,8 +68,8 @@ export const TicketDetail = () => {
     const statusMap = {
       'OPEN': 'Abierto',
       'IN_PROGRESS': 'En Proceso',
-      'WAITING_FOR_STUDENT': 'Esperando al Estudiante',
-      'WAITING_FOR_THIRD_PARTY': 'Esperando a Terceros',
+      'WAITING_FOR_STUDENT': 'Esperando Estudiante',
+      'WAITING_FOR_THIRD_PARTY': 'Esperando Terceros',
       'RESOLVED': 'Resuelto',
       'CLOSED': 'Cerrado',
       'CANCELLED': 'Cancelado',
@@ -117,7 +83,7 @@ export const TicketDetail = () => {
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
@@ -155,117 +121,139 @@ export const TicketDetail = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header & Back Button */}
-      <div className="mb-6">
+      {/* Back Button */}
+      <div className="mb-4">
         <button
           onClick={() => navigate('/reclamos')}
-          className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium mb-4 transition-colors"
+          className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition-colors"
         >
           ← Volver al listado
         </button>
-        <h2 className="text-3xl font-bold text-text-main">Detalle del Reclamo</h2>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto pr-4 pb-4 space-y-6">
-        {/* Ticket Card */}
-        <div className="border border-gray-300 rounded-lg p-6 bg-white dark:bg-gray-800 dark:border-gray-700">
-          {/* ID & Status */}
-          <div className="flex items-start justify-between mb-6 pb-6 border-b border-gray-300 dark:border-gray-700">
-            <div>
-              <p className="text-sm text-text-secondary mb-1">ID del Reclamo</p>
-              <p className="text-2xl font-bold text-text-main">{ticket.id}</p>
+      {/* Main Ticket Card */}
+      <div className="flex-1 overflow-auto pr-4 pb-4">
+        <div className="border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700">
+          {/* Header: Responsable | Ticket ID | Estado */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-text-main">Responsable</span>
+              <button className="text-gray-400 hover:text-primary-500 transition-colors">
+                <i className="fas fa-pencil-alt text-xs"></i>
+              </button>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-text-secondary mb-2">Estado Actual</p>
-              <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeColor(ticket.status)}`}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-text-main">Ticket {ticket.id}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(ticket.status)}`}>
                 {formatStatus(ticket.status)}
               </span>
+              <button className="text-gray-400 hover:text-primary-500 transition-colors">
+                <i className="fas fa-pencil-alt text-xs"></i>
+              </button>
             </div>
           </div>
 
-          {/* Status Update Control */}
-          <div className="mb-6 pb-6 border-b border-gray-300 dark:border-gray-700">
-            <p className="text-xs font-semibold text-text-secondary uppercase mb-3">Actualizar Estado</p>
-            <div className="flex items-center gap-4">
-              <select
-                value={ticket.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={statusUpdateLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-text-main focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Title */}
+          <div className="p-6 border-b border-gray-300 dark:border-gray-700">
+            <h3 className="text-xl font-bold text-text-main text-center">{ticket.title}</h3>
+          </div>
+
+          {/* Description */}
+          <div className="p-6 border-b border-gray-300 dark:border-gray-700 min-h-[120px]">
+            <p className="text-text-main whitespace-pre-wrap">{ticket.description}</p>
+          </div>
+
+          {/* Info Grid */}
+          <div className="p-4 space-y-2">
+            {/* Row 1: Creador | Fecha creación */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Creador</p>
+                <p className="text-sm text-text-main font-medium">{ticket.createdBy || 'Sin asignar'}</p>
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Fecha creación</p>
+                <p className="text-sm text-text-main font-medium">{formatDate(ticket.createdAt)}</p>
+              </div>
+            </div>
+
+            {/* Row 2: Categoría | Subcategoría */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Categoría</p>
+                <p className="text-sm text-text-main font-medium">{ticket.category || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Subcategoría</p>
+                <p className="text-sm text-text-main font-medium">{ticket.subcategory || 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Row 3: Materia | Comisión */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Materia</p>
+                <p className="text-sm text-text-main font-medium">{ticket.subject || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <p className="text-xs text-text-secondary">Comisión</p>
+                <p className="text-sm text-text-main font-medium">{ticket.commission || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Collapsible Sections */}
+          <div className="border-t border-gray-300 dark:border-gray-700">
+            {/* Comments Section */}
+            <div className="border-b border-gray-300 dark:border-gray-700">
+              <button
+                onClick={() => toggleSection('comments')}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {formatStatus(status)}
-                  </option>
-                ))}
-              </select>
-              {statusUpdateLoading && (
-                <p className="text-sm text-text-secondary">Actualizando...</p>
+                <span className="text-sm font-medium text-text-main">Comentarios</span>
+                <i className={`fas fa-chevron-${openSection === 'comments' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+              </button>
+              {openSection === 'comments' && (
+                <div className="px-4 pb-4">
+                  <p className="text-sm text-text-secondary italic">Sección de comentarios - Próximamente</p>
+                </div>
               )}
             </div>
-            {statusUpdateError && (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400">{statusUpdateError}</p>
-            )}
-            {statusUpdateSuccess && (
-              <p className="mt-2 text-sm text-green-600 dark:text-green-400">{statusUpdateSuccess}</p>
-            )}
-          </div>
 
-          {/* Title & Description */}
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Título</p>
-            <h3 className="text-2xl font-bold text-text-main mb-4">{ticket.title}</h3>
-
-            <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Descripción</p>
-            <p className="text-text-main leading-relaxed whitespace-pre-wrap mb-6">{ticket.description}</p>
-          </div>
-
-          {/* Categorization Info */}
-          <div className="grid grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-300 dark:border-gray-700">
-            <div>
-              <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Categoría</p>
-              <p className="text-text-main font-medium">{ticket.category || 'N/A'}</p>
+            {/* Messages Section */}
+            <div className="border-b border-gray-300 dark:border-gray-700">
+              <button
+                onClick={() => toggleSection('messages')}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <span className="text-sm font-medium text-text-main">Mensajes</span>
+                <i className={`fas fa-chevron-${openSection === 'messages' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+              </button>
+              {openSection === 'messages' && (
+                <div className="px-4 pb-4">
+                  <p className="text-sm text-text-secondary italic">Sección de mensajes - Próximamente</p>
+                </div>
+              )}
             </div>
-            <div>
-              <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Subcategoría</p>
-              <p className="text-text-main font-medium">{ticket.subcategory || 'N/A'}</p>
-            </div>
-            {ticket.subject && (
-              <div>
-                <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Materia</p>
-                <p className="text-text-main font-medium">{ticket.subject}</p>
-              </div>
-            )}
-            {ticket.commission && (
-              <div>
-                <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Comisión</p>
-                <p className="text-text-main font-medium">{ticket.commission}</p>
-              </div>
-            )}
-          </div>
 
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-6">
+            {/* History Section */}
             <div>
-              <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Fecha de Creación</p>
-              <p className="text-text-main text-sm">{formatDate(ticket.createdAt)}</p>
+              <button
+                onClick={() => toggleSection('history')}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <span className="text-sm font-medium text-text-main">Historial</span>
+                <i className={`fas fa-chevron-${openSection === 'history' ? 'up' : 'down'} text-text-secondary text-xs transition-transform`}></i>
+              </button>
+              {openSection === 'history' && (
+                <div className="px-4 pb-4">
+                  <p className="text-sm text-text-secondary italic">Sección de historial - Próximamente</p>
+                </div>
+              )}
             </div>
-            {ticket.updatedAt && (
-              <div>
-                <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Última Actualización</p>
-                <p className="text-text-main text-sm">{formatDate(ticket.updatedAt)}</p>
-              </div>
-            )}
           </div>
-        </div>
-
-        {/* Comments Section Placeholder */}
-        <div className="border border-gray-300 rounded-lg p-6 bg-white dark:bg-gray-800 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-text-main mb-4">Comentarios</h3>
-          <p className="text-text-secondary text-sm italic">
-            La funcionalidad de comentarios se implementará en la Etapa 3.
-          </p>
         </div>
       </div>
     </div>

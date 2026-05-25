@@ -5,15 +5,13 @@ import { apiFetch } from '../services/api';
 export const CreateTicket = () => {
   const navigate = useNavigate();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [subject, setSubject] = useState('');
   const [commission, setCommission] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [validationErrors, setValidationErrors] = useState([]);
-  const [titleError, setTitleError] = useState('');
-  const [descriptionError, setDescriptionError] = useState('');
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
@@ -21,30 +19,23 @@ export const CreateTicket = () => {
     navigate('/reclamos');
   };
 
-  // Validate form fields
   const validateForm = () => {
     const errors = [];
-    const newTitleError = '';
-    const newDescriptionError = '';
 
-    // Check required fields
-    if (!title.trim()) {
-      errors.push('El título es obligatorio');
-    }
-    if (!description.trim()) {
-      errors.push('La descripción es obligatoria');
-    }
     if (!category) {
       errors.push('Debes seleccionar una categoría');
     }
     if (!subcategory) {
       errors.push('Debes seleccionar una subcategoría');
     }
+    if (!title.trim()) {
+      errors.push('El título es obligatorio');
+    }
+    if (!description.trim()) {
+      errors.push('La descripción es obligatoria');
+    }
 
-    setTitleError(newTitleError);
-    setDescriptionError(newDescriptionError);
     setValidationErrors(errors);
-
     return errors.length === 0;
   };
 
@@ -52,7 +43,6 @@ export const CreateTicket = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -75,10 +65,8 @@ export const CreateTicket = () => {
         body: JSON.stringify(ticketData),
       });
 
-      // Success: navigate to tickets list
       navigate('/reclamos');
     } catch (error) {
-      // Extract error message from API response or use friendly message
       const errorMessage = (() => {
         if (error.response?.data?.error) {
           return error.response.data.error;
@@ -89,18 +77,21 @@ export const CreateTicket = () => {
         return error.message || 'Error al crear el reclamo. Intenta nuevamente.';
       })();
       setApiError(errorMessage);
-
-      // Scroll to top to show error
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Check if form is ready to submit
-  const isFormValid = title.trim() && description.trim() && category && subcategory;
+  const isFormValid = category && subcategory && title.trim() && description.trim();
 
-  // Subcategory options mapped by category
+  const categoryOptions = [
+    { value: 'ACADEMIC', label: 'Académica' },
+    { value: 'INSTITUTIONAL', label: 'Institucional' },
+    { value: 'TECHNICAL', label: 'Técnica' },
+    { value: 'GENERAL', label: 'General' },
+  ];
+
   const subcategoryOptions = {
     ACADEMIC: [
       { value: 'GRADE_ISSUE', label: 'Problema con calificación' },
@@ -110,8 +101,8 @@ export const CreateTicket = () => {
     ],
     INSTITUTIONAL: [
       { value: 'SUBJECT_EQUIVALENCY_REQUEST', label: 'Solicitud de equivalencia de materia' },
-      { value: 'GRADE_RECORD_CORRECTION_REQUEST', label: 'Solicitud de corrección de historial' },
-      { value: 'NEW_STUDENT_CERTIFICATE_REQUEST', label: 'Solicitud de certificado de alumno' },
+      { value: 'GRADE_RECORD_CORRECTION_REQUEST', label: 'Solicitud de corrección de nota' },
+      { value: 'NEW_STUDENT_CERTIFICATE_REQUEST', label: 'Solicitud de certificado de alumno regular' },
       { value: 'EXAM_CERTIFICATE_REQUEST', label: 'Solicitud de certificado de examen' },
       { value: 'DEGREE_PROCESS_REQUEST', label: 'Solicitud de trámite de título' },
       { value: 'CLASS_SECTION_CHANGE_REQUEST', label: 'Solicitud de cambio de comisión' },
@@ -124,18 +115,37 @@ export const CreateTicket = () => {
     GENERAL: [{ value: 'GENERAL_INQUIRY', label: 'Consulta general' }],
   };
 
+  const subjectOptions = [
+    { value: '', label: 'Seleccionar materia' },
+    { value: 'PROGRAMACION_I', label: 'Programación I' },
+    { value: 'PROGRAMACION_II', label: 'Programación II' },
+    { value: 'MATEMATICA_I', label: 'Matemática I' },
+    { value: 'MATEMATICA_II', label: 'Matemática II' },
+    { value: 'INGENIERIA_SOFTWARE', label: 'Ingeniería de Software' },
+    { value: 'BASE_DATOS', label: 'Base de Datos' },
+    { value: 'REDES', label: 'Redes' },
+  ];
+
+  const commissionOptions = [
+    { value: '', label: 'Seleccionar comisión' },
+    { value: '1K', label: '1K' },
+    { value: '1A', label: '1A' },
+    { value: '2K', label: '2K' },
+    { value: '2A', label: '2A' },
+    { value: '3K', label: '3K' },
+    { value: '3A', label: '3A' },
+  ];
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-text-main mb-2">Crear Nuevo Reclamo</h2>
-        <p className="text-text-secondary">Completa el formulario para registrar un nuevo reclamo</p>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-text-main text-center">Generar un reclamo</h2>
       </div>
 
       {/* Validation Errors Alert */}
       {validationErrors.length > 0 && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
-          <p className="text-red-800 font-semibold mb-2 dark:text-red-100">Por favor corrige los siguientes errores:</p>
+        <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
           <ul className="list-disc list-inside space-y-1">
             {validationErrors.map((error, index) => (
               <li key={index} className="text-red-700 text-sm dark:text-red-200">
@@ -148,170 +158,157 @@ export const CreateTicket = () => {
 
       {/* API Error Alert */}
       {apiError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
+        <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900 dark:border-red-700">
           <p className="text-red-800 text-sm dark:text-red-100">{apiError}</p>
-        </div>
-      )}
-
-      {/* Loading Spinner */}
-      {loading && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-300 rounded-lg dark:bg-blue-900 dark:border-blue-700">
-          <p className="text-blue-800 text-sm dark:text-blue-100">Enviando reclamo...</p>
         </div>
       )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto pr-4 pb-4">
-          <div className="space-y-6">
-            {/* Title Input */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-semibold text-text-main mb-2">
-                Título del Reclamo <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej: Problema con calificación de examen"
-                disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 ${
-                  titleError
-                    ? 'border-red-500 focus:ring-red-500 dark:border-red-700'
-                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
-                }`}
-              />
-              {titleError && <p className="text-red-600 text-sm mt-1">{titleError}</p>}
-            </div>
-
-            {/* Description Textarea */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-semibold text-text-main mb-2">
-                Descripción <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe en detalle el problema o solicitud"
-                rows={5}
-                disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 ${
-                  descriptionError
-                    ? 'border-red-500 focus:ring-red-500 dark:border-red-700'
-                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
-                }`}
-              />
-              {descriptionError && <p className="text-red-600 text-sm mt-1">{descriptionError}</p>}
-            </div>
-
-            {/* Category Selector */}
-            <div>
-              <label htmlFor="category" className="block text-sm font-semibold text-text-main mb-2">
-                Categoría <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  setSubcategory('');
-                }}
-                disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">Selecciona una categoría</option>
-                <option value="ACADEMIC">Académica</option>
-                <option value="INSTITUTIONAL">Institucional</option>
-                <option value="TECHNICAL">Técnica</option>
-                <option value="GENERAL">General</option>
-              </select>
-            </div>
-
-            {/* Subcategory Selector */}
-            <div>
-              <label htmlFor="subcategory" className="block text-sm font-semibold text-text-main mb-2">
-                Subcategoría <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="subcategory"
-                value={subcategory}
-                onChange={(e) => setSubcategory(e.target.value)}
-                disabled={!category || loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white text-gray-900 dark:bg-gray-800 dark:text-white ${
-                  !category || loading
-                    ? 'border-gray-300 text-gray-900 cursor-not-allowed opacity-60 dark:border-gray-600 dark:text-gray-400'
-                    : 'border-gray-300 focus:ring-primary-500 dark:border-gray-600'
-                }`}
-              >
-                <option value="">
-                  {category ? 'Selecciona una subcategoría' : 'Primero selecciona una categoría'}
+        <div className="flex-1 overflow-auto pr-4 pb-4 space-y-4">
+          {/* Category Selector */}
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-text-main mb-1">
+              Categoría
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSubcategory('');
+              }}
+              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50"
+            >
+              <option value="">Seleccionar categoría</option>
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
-                {category &&
-                  subcategoryOptions[category]?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-              </select>
-            </div>
+              ))}
+            </select>
+          </div>
 
-            {/* Subject Input (Optional) */}
+          {/* Subcategory Selector */}
+          <div>
+            <label htmlFor="subcategory" className="block text-sm font-medium text-text-main mb-1">
+              Subcategoría
+            </label>
+            <select
+              id="subcategory"
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              disabled={!category || loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50"
+            >
+              <option value="">
+                {category ? 'Seleccionar subcategoría' : 'Primero selecciona una categoría'}
+              </option>
+              {category &&
+                subcategoryOptions[category]?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* Subject & Commission Row */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="subject" className="block text-sm font-semibold text-text-main mb-2">
-                Materia <span className="text-gray-400">(Opcional)</span>
+              <label htmlFor="subject" className="block text-sm font-medium text-text-main mb-1">
+                Materia
               </label>
-              <input
+              <select
                 id="subject"
-                type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Ej: Programación I"
                 disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50"
+              >
+                {subjectOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Commission Input (Optional) */}
             <div>
-              <label htmlFor="commission" className="block text-sm font-semibold text-text-main mb-2">
-                Comisión <span className="text-gray-400">(Opcional)</span>
+              <label htmlFor="commission" className="block text-sm font-medium text-text-main mb-1">
+                Comisión
               </label>
-              <input
+              <select
                 id="commission"
-                type="text"
                 value={commission}
                 onChange={(e) => setCommission(e.target.value)}
-                placeholder="Ej: 1K"
                 disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-600 disabled:opacity-50"
+              >
+                {commissionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
+
+          {/* Title Input */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-text-main mb-1">
+              Título
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título del reclamo"
+              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600 disabled:opacity-50"
+            />
+          </div>
+
+          {/* Description Textarea */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-text-main mb-1">
+              Descripción
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descripción detallada del reclamo"
+              rows={6}
+              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:border-gray-600 disabled:opacity-50"
+            />
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mt-8 pt-6 border-t border-gray-300 dark:border-gray-700">
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-300 dark:border-gray-700">
           <button
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+            className="px-5 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 font-medium transition-colors disabled:opacity-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={!isFormValid || loading}
-            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ml-auto ${
+            className={`px-5 py-2 rounded font-medium transition-all duration-200 flex items-center gap-2 ${
               isFormValid && !loading
-                ? 'bg-primary-500 text-white hover:bg-primary-600 cursor-pointer active:scale-95 dark:bg-primary-600 dark:hover:bg-primary-700'
+                ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95 dark:bg-primary-600 dark:hover:bg-primary-700'
                 : 'bg-gray-400 text-white cursor-not-allowed opacity-60 dark:bg-gray-700'
             }`}
           >
-            {loading ? 'Enviando...' : 'Enviar Reclamo'}
+            {loading ? 'Enviando...' : 'Enviar'}
+            {!loading && <i className="fas fa-arrow-right"></i>}
           </button>
         </div>
       </form>
