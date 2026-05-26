@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const Inicio = () => (
   <div className="flex flex-col justify-center h-full px-8">
     <h1 className="text-4xl font-bold text-text-main mb-3">
@@ -26,13 +24,6 @@ export const Inicio = () => (
       </div>
     
     </div>
-  </div>
-);
-
-export const Reclamos = () => (
-  <div className="flex flex-col items-center justify-center h-full text-center">
-    <h2 className="text-3xl font-bold text-text-main mb-4">Gestión de Reclamos</h2>
-    <p className="text-text-secondary">Página en construcción.</p>
   </div>
 );
 
