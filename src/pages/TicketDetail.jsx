@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../services/api';
-import { mockUsers } from '../services/mockData';
+import { mockUsers, currentUser, mockHistory } from '../services/mockData';
 
 export const TicketDetail = () => {
   const { id } = useParams();
@@ -16,23 +16,23 @@ export const TicketDetail = () => {
   const [messages, setMessages] = useState([]);
   const [history, setHistory] = useState([]);
   const [sectionLoading, setSectionLoading] = useState({});
-  const [newCommentAuthor, setNewCommentAuthor] = useState('');
   const [newCommentContent, setNewCommentContent] = useState('');
-  const [newMessageAuthor, setNewMessageAuthor] = useState('');
   const [newMessageContent, setNewMessageContent] = useState('');
   const [commentError, setCommentError] = useState('');
   const [messageError, setMessageError] = useState('');
 
   const [showResponsiblePopup, setShowResponsiblePopup] = useState(false);
   const [showStatusPopup, setShowStatusPopup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedResponsible, setSelectedResponsible] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [responsibleSearch, setResponsibleSearch] = useState('');
   const [popupError, setPopupError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const RESPONSIBLES = Object.values(mockUsers)
-    .filter((u) => u.id !== 12 && u.id !== 1 && u.id !== 2 && u.id !== 3 && u.id !== 4 && u.id !== 5)
-    .map((u) => u.name);
+    .filter((u) => u.role !== 'Alumno' && u.role !== 'Alumna' && u.role !== 'Automático')
+    .map((u) => ({ id: u.id, name: u.name, role: u.role, label: `${u.name} (${u.role})` }));
 
   const STATUSES = [
     'OPEN',
@@ -43,6 +43,8 @@ export const TicketDetail = () => {
     'CLOSED',
     'CANCELLED',
   ];
+
+  const isCurrentUserStaff = currentUser.role !== 'Alumno' && currentUser.role !== 'Alumna';
 
   const toggleSection = async (section) => {
     if (openSection === section) {
@@ -83,7 +85,13 @@ export const TicketDetail = () => {
       } else if (section === 'messages') {
         setMessages(Array.isArray(data) ? data : []);
       } else if (section === 'history') {
-        setHistory(Array.isArray(data) ? data : []);
+        // Sort history by createdAt in chronological order (oldest first)
+        const sortedHistory = Array.isArray(data) 
+          ? [...data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+          : [];
+        console.log('History fetched for ticket', id, ':', data);
+        console.log('Sorted history:', sortedHistory);
+        setHistory(sortedHistory);
       }
     } catch (err) {
       console.error(`Unexpected error in toggleSection ${section}:`, err);
@@ -146,7 +154,6 @@ export const TicketDetail = () => {
       });
 
       setComments([...comments, response.data]);
-      setNewCommentAuthor('');
       setNewCommentContent('');
     } catch (err) {
       const errorMessage = (() => {
@@ -175,7 +182,6 @@ export const TicketDetail = () => {
       });
 
       setMessages([...messages, response.data]);
-      setNewMessageAuthor('');
       setNewMessageContent('');
     } catch (err) {
       const errorMessage = (() => {
@@ -241,7 +247,7 @@ export const TicketDetail = () => {
 
   const openResponsiblePopup = () => {
     try {
-      setSelectedResponsible(ticket?.assignedTo?.name || '');
+      setSelectedResponsible(ticket?.assignedTo?.id || '');
       setResponsibleSearch('');
       setPopupError('');
       setShowResponsiblePopup(true);
@@ -261,15 +267,32 @@ export const TicketDetail = () => {
   };
 
   const handleUpdateResponsible = async () => {
-    if (!selectedResponsible.trim()) {
+    if (!selectedResponsible) {
       setPopupError('Debes seleccionar un responsable');
       return;
     }
 
     try {
       setPopupError('');
-      const responsibleUser = Object.values(mockUsers).find((u) => u.name === selectedResponsible.trim());
-      setTicket({ ...ticket, assignedTo: responsibleUser || null });
+      const responsibleUser = mockUsers[selectedResponsible] || null;
+      const oldResponsible = ticket.assignedTo?.name || 'Sin asignar';
+      const newResponsible = responsibleUser?.name || 'Sin asignar';
+
+      setTicket({ ...ticket, assignedTo: responsibleUser });
+
+      if (mockHistory[id]) {
+        mockHistory[id].push({
+          id: Date.now(),
+          ticketId: parseInt(id),
+          action: 'ASSIGNED_CHANGED',
+          oldValue: oldResponsible,
+          newValue: newResponsible,
+          description: `Responsable cambiado de ${oldResponsible} a ${newResponsible}`,
+          performedBy: currentUser,
+          createdAt: new Date(),
+        });
+      }
+
       setShowResponsiblePopup(false);
     } catch {
       setPopupError('Error al actualizar el responsable');
@@ -302,8 +325,23 @@ export const TicketDetail = () => {
     }
   };
 
+  const handleDeleteTicket = async () => {
+    try {
+      setDeleteLoading(true);
+      setPopupError('');
+      await apiFetch(`/tickets/${id}`, {
+        method: 'DELETE',
+      });
+      navigate('/reclamos');
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.message || 'Error al eliminar el ticket.';
+      setPopupError(errorMessage);
+      setDeleteLoading(false);
+    }
+  };
+
   const filteredResponsibles = RESPONSIBLES.filter((r) =>
-    r.toLowerCase().includes(responsibleSearch.toLowerCase())
+    r.label.toLowerCase().includes(responsibleSearch.toLowerCase())
   );
 
   if (loading) {
@@ -338,19 +376,22 @@ export const TicketDetail = () => {
       <div className="mb-4">
         <button
           onClick={() => navigate('/reclamos')}
-          className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition-colors"
+          className="text-brand-blue hover:text-brand-dark dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors flex items-center gap-1"
         >
-          ← Volver al listado
+          <i className="fas fa-arrow-left text-xs"></i>
+          Volver al listado
         </button>
       </div>
 
       {/* Main Ticket Card */}
       <div className="flex-1 overflow-auto pr-4 pb-4">
-        <div className="border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm">
+        <div className="bg-surface rounded-xl shadow-sm border border-border">
           {/* Header: Responsable | Ticket ID | Estado */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.assignedTo?.name || 'Sin asignar'}</span>
+          <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-text-main">
+                {ticket.assignedTo?.name || 'Sin asignar'} {ticket.assignedTo?.role ? `(${ticket.assignedTo.role})` : ''}
+              </span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -358,16 +399,16 @@ export const TicketDetail = () => {
                   e.stopPropagation();
                   openResponsiblePopup();
                 }}
-                className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-primary-100 text-gray-500 hover:text-primary-600 transition-colors dark:bg-gray-700 dark:hover:bg-primary-900 dark:text-gray-400 dark:hover:text-primary-400"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-400 transition-colors"
                 title="Editar responsable"
               >
                 <i className="fas fa-pencil-alt text-xs"></i>
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Ticket {ticket.id}</span>
+              <span className="text-sm font-medium text-text-secondary">Ticket {ticket.id}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(ticket.status)}`}>
                 {formatStatus(ticket.status)}
               </span>
@@ -378,123 +419,138 @@ export const TicketDetail = () => {
                   e.stopPropagation();
                   openStatusPopup();
                 }}
-                className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-primary-100 text-gray-500 hover:text-primary-600 transition-colors dark:bg-gray-700 dark:hover:bg-primary-900 dark:text-gray-400 dark:hover:text-primary-400"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-400 transition-colors"
                 title="Editar estado"
               >
                 <i className="fas fa-pencil-alt text-xs"></i>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDeleteConfirm(true);
+                }}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-state-rejected/10 hover:bg-state-rejected/20 text-state-rejected transition-colors"
+                title="Eliminar ticket"
+              >
+                <i className="fas fa-trash-alt text-xs"></i>
               </button>
             </div>
           </div>
 
           {/* Title */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">{ticket.title}</h3>
+          <div className="p-6 border-b border-border">
+            <h3 className="text-xl font-bold text-text-main text-center">{ticket.title}</h3>
           </div>
 
           {/* Description */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 min-h-[120px]">
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
+          <div className="p-6 border-b border-border min-h-[120px]">
+            <p className="text-text-secondary whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
           </div>
 
           {/* Info Grid */}
-          <div className="p-4 space-y-2">
+          <div className="p-5 space-y-3">
             {/* Row 1: Creador | Fecha creación */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Creador</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.createdBy?.name || 'Sin asignar'}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Creador</p>
+                <p className="text-sm text-text-main font-semibold">
+                  {ticket.createdBy?.name || 'Sin asignar'} {ticket.createdBy?.role ? `(${ticket.createdBy.role})` : ''}
+                </p>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Fecha creación</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{formatDate(ticket.createdAt)}</p>
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Fecha creación</p>
+                <p className="text-sm text-text-main font-semibold">{formatDate(ticket.createdAt)}</p>
               </div>
             </div>
 
             {/* Row 2: Categoría | Subcategoría */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Categoría</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.category || 'N/A'}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Categoría</p>
+                <p className="text-sm text-text-main font-semibold">{ticket.category || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Subcategoría</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.subcategory || 'N/A'}</p>
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Subcategoría</p>
+                <p className="text-sm text-text-main font-semibold">{ticket.subcategory || 'N/A'}</p>
               </div>
             </div>
 
             {/* Row 3: Materia | Comisión */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Materia</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.subject || 'N/A'}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Materia</p>
+                <p className="text-sm text-text-main font-semibold">{ticket.subject || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Comisión</p>
-                <p className="text-sm text-gray-900 dark:text-white font-semibold">{ticket.commission || 'N/A'}</p>
+              <div className="bg-background rounded-lg px-4 py-3">
+                <p className="text-xs text-text-secondary font-medium mb-1">Comisión</p>
+                <p className="text-sm text-text-main font-semibold">{ticket.commission || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Collapsible Sections */}
-          <div className="border-t border-gray-200 dark:border-gray-700">
+          <div className="border-t border-border">
             {/* Comments Section */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="border-b border-border">
               <button
                 onClick={() => toggleSection('comments')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-background transition-colors"
               >
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Comentarios</span>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                <span className="text-sm font-semibold text-text-main">Comentarios</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-background text-text-secondary">
                   <i className={`fas fa-chevron-${openSection === 'comments' ? 'up' : 'down'} text-xs`}></i>
                 </span>
               </button>
               {openSection === 'comments' && (
-                <div className="px-4 pb-4 space-y-3">
+                <div className="px-5 pb-5 space-y-4">
                   {sectionLoading.comments ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando comentarios...</p>
+                    <p className="text-sm text-text-secondary italic text-center py-4">Cargando comentarios...</p>
                   ) : (
                     <>
                       {/* Add Comment Form */}
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3 border border-gray-200 dark:border-gray-600">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={newCommentAuthor}
-                            onChange={(e) => setNewCommentAuthor(e.target.value)}
-                            placeholder="Nombre"
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          />
-                          <button
-                            onClick={handleAddComment}
-                            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
-                          >
-                            Agregar <i className="fas fa-arrow-right text-xs"></i>
-                          </button>
+                      <div className="bg-background rounded-lg p-4 space-y-3 border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-text-secondary">
+                            {currentUser.name} ({currentUser.role})
+                          </span>
+                          <span className="text-xs text-text-secondary">{formatDate(new Date())}</span>
                         </div>
                         <textarea
                           value={newCommentContent}
                           onChange={(e) => setNewCommentContent(e.target.value)}
                           placeholder="Escribí tu comentario..."
                           rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-text-main resize-none focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent dark:bg-surface dark:text-text-main"
                         />
+                        <div className="flex justify-end">
+                          <button
+                            onClick={handleAddComment}
+                            className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                          >
+                            Agregar <i className="fas fa-arrow-right text-xs"></i>
+                          </button>
+                        </div>
                         {commentError && (
-                          <p className="text-red-600 dark:text-red-400 text-xs font-medium">{commentError}</p>
+                          <p className="text-state-rejected text-xs font-medium">{commentError}</p>
                         )}
                       </div>
 
                       {/* Comments List */}
                       {comments.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay comentarios aún.</p>
+                        <p className="text-sm text-text-secondary italic text-center py-4">No hay comentarios aún.</p>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {comments.map((comment) => (
-                            <div key={comment.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                            <div key={comment.id} className="bg-surface rounded-lg p-4 border border-border shadow-sm">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{comment.author?.name || 'Sin asignar'}</span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(comment.createdAt)}</span>
+                                <span className="text-xs font-semibold text-text-main">
+                                  {comment.author?.name || 'Sin asignar'} {comment.author?.role ? `(${comment.author.role})` : ''}
+                                </span>
+                                <span className="text-xs text-text-secondary">{formatDate(comment.createdAt)}</span>
                               </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{comment.content}</p>
+                              <p className="text-sm text-text-secondary leading-relaxed">{comment.content}</p>
                             </div>
                           ))}
                         </div>
@@ -506,63 +562,73 @@ export const TicketDetail = () => {
             </div>
 
             {/* Messages Section */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="border-b border-border">
               <button
                 onClick={() => toggleSection('messages')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-background transition-colors"
               >
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Mensajes</span>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                <span className="text-sm font-semibold text-text-main">Mensajes</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-background text-text-secondary">
                   <i className={`fas fa-chevron-${openSection === 'messages' ? 'up' : 'down'} text-xs`}></i>
                 </span>
               </button>
               {openSection === 'messages' && (
-                <div className="px-4 pb-4 space-y-3">
+                <div className="px-5 pb-5 space-y-4">
                   {sectionLoading.messages ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando mensajes...</p>
+                    <p className="text-sm text-text-secondary italic text-center py-4">Cargando mensajes...</p>
                   ) : (
                     <>
-                      {/* Add Message Form */}
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3 border border-gray-200 dark:border-gray-600">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={newMessageAuthor}
-                            onChange={(e) => setNewMessageAuthor(e.target.value)}
-                            placeholder="Nombre"
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      {/* Add Message Form - Only for staff */}
+                      {isCurrentUserStaff ? (
+                        <div className="bg-background rounded-lg p-4 space-y-3 border border-border">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-text-secondary">
+                              {currentUser.name} ({currentUser.role})
+                            </span>
+                            <span className="text-xs text-text-secondary">{formatDate(new Date())}</span>
+                          </div>
+                          <textarea
+                            value={newMessageContent}
+                            onChange={(e) => setNewMessageContent(e.target.value)}
+                            placeholder="Escribí tu mensaje..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-text-main resize-none focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent dark:bg-surface dark:text-text-main"
                           />
-                          <button
-                            onClick={handleAddMessage}
-                            className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
-                          >
-                            Agregar <i className="fas fa-arrow-right text-xs"></i>
-                          </button>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={handleAddMessage}
+                              className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                            >
+                              Agregar <i className="fas fa-arrow-right text-xs"></i>
+                            </button>
+                          </div>
+                          {messageError && (
+                            <p className="text-state-rejected text-xs font-medium">{messageError}</p>
+                          )}
                         </div>
-                        <textarea
-                          value={newMessageContent}
-                          onChange={(e) => setNewMessageContent(e.target.value)}
-                          placeholder="Escribí tu mensaje..."
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        />
-                        {messageError && (
-                          <p className="text-red-600 dark:text-red-400 text-xs font-medium">{messageError}</p>
-                        )}
-                      </div>
+                      ) : (
+                        <div className="bg-background rounded-lg p-4 border border-border">
+                          <p className="text-sm text-text-secondary text-center">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            Solo el personal encargado puede enviar mensajes.
+                          </p>
+                        </div>
+                      )}
 
                       {/* Messages List */}
                       {messages.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay mensajes aún.</p>
+                        <p className="text-sm text-text-secondary italic text-center py-4">No hay mensajes aún.</p>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {messages.map((message) => (
-                            <div key={message.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                            <div key={message.id} className="bg-surface rounded-lg p-4 border border-border shadow-sm">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{message.author?.name || 'Sin asignar'}</span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(message.createdAt)}</span>
+                                <span className="text-xs font-semibold text-text-main">
+                                  {message.author?.name || 'Sin asignar'} {message.author?.role ? `(${message.author.role})` : ''}
+                                </span>
+                                <span className="text-xs text-text-secondary">{formatDate(message.createdAt)}</span>
                               </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{message.content}</p>
+                              <p className="text-sm text-text-secondary leading-relaxed">{message.content}</p>
                             </div>
                           ))}
                         </div>
@@ -577,27 +643,29 @@ export const TicketDetail = () => {
             <div>
               <button
                 onClick={() => toggleSection('history')}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-background transition-colors"
               >
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">Historial</span>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                <span className="text-sm font-semibold text-text-main">Historial</span>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-background text-text-secondary">
                   <i className={`fas fa-chevron-${openSection === 'history' ? 'up' : 'down'} text-xs`}></i>
                 </span>
               </button>
               {openSection === 'history' && (
-                <div className="px-4 pb-4 space-y-2">
+                <div className="px-5 pb-5 space-y-3">
                   {sectionLoading.history ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">Cargando historial...</p>
+                    <p className="text-sm text-text-secondary italic text-center py-4">Cargando historial...</p>
                   ) : history.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No hay entradas en el historial.</p>
+                    <p className="text-sm text-text-secondary italic text-center py-4">No hay entradas en el historial.</p>
                   ) : (
                     history.map((entry) => (
-                      <div key={entry.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <div key={entry.id} className="bg-surface rounded-lg p-4 border border-border shadow-sm">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(entry.createdAt)}</span>
-                          <span className="text-xs font-semibold text-gray-900 dark:text-white">{entry.performedBy?.name || 'Sistema'}</span>
+                          <span className="text-xs text-text-secondary">{formatDate(entry.createdAt)}</span>
+                          <span className="text-xs font-semibold text-text-main">
+                            {entry.performedBy?.name || 'Sistema'} {entry.performedBy?.role ? `(${entry.performedBy.role})` : ''}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{entry.description}</p>
+                        <p className="text-sm text-text-secondary leading-relaxed">{entry.description}</p>
                       </div>
                     ))
                   )}
@@ -611,9 +679,9 @@ export const TicketDetail = () => {
       {/* Responsible Edit Popup */}
       {showResponsiblePopup && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md border border-border">
             <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Editar Responsable</h3>
+              <h3 className="text-lg font-bold text-text-main mb-4">Editar Responsable</h3>
 
               {/* Search Input */}
               <div className="relative mb-4">
@@ -622,26 +690,26 @@ export const TicketDetail = () => {
                   value={responsibleSearch}
                   onChange={(e) => setResponsibleSearch(e.target.value)}
                   placeholder="Buscar nombre"
-                  className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 pr-10 border border-border rounded-lg text-sm bg-background text-text-main focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                 />
-                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+                <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               </div>
 
               {/* Name List */}
               <div className="space-y-1.5 mb-4 max-h-48 overflow-y-auto pr-1">
                 {filteredResponsibles.map((responsible) => (
                   <button
-                    key={responsible}
-                    onClick={() => setSelectedResponsible(responsible)}
+                    key={responsible.id}
+                    onClick={() => setSelectedResponsible(responsible.id)}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      selectedResponsible === responsible
-                        ? 'bg-primary-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200'
+                      selectedResponsible === responsible.id
+                        ? 'bg-brand-blue text-white shadow-md'
+                        : 'bg-background text-text-main hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <span className="flex items-center justify-between">
-                      {responsible}
-                      {selectedResponsible === responsible && (
+                      {responsible.label}
+                      {selectedResponsible === responsible.id && (
                         <i className="fas fa-check text-sm"></i>
                       )}
                     </span>
@@ -650,20 +718,20 @@ export const TicketDetail = () => {
               </div>
 
               {popupError && (
-                <p className="text-red-600 dark:text-red-400 text-xs mb-3 font-medium">{popupError}</p>
+                <p className="text-state-rejected text-xs mb-3 font-medium">{popupError}</p>
               )}
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setShowResponsiblePopup(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 bg-gray-200 text-text-main rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleUpdateResponsible}
-                  className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                  className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
                 >
                   Actualizar <i className="fas fa-arrow-right text-xs"></i>
                 </button>
@@ -676,9 +744,9 @@ export const TicketDetail = () => {
       {/* Status Edit Popup */}
       {showStatusPopup && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md border border-border">
             <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Editar Estado</h3>
+              <h3 className="text-lg font-bold text-text-main mb-4">Editar Estado</h3>
 
               {/* Status Grid */}
               <div className="grid grid-cols-3 gap-2 mb-4">
@@ -688,8 +756,8 @@ export const TicketDetail = () => {
                     onClick={() => setSelectedStatus(status)}
                     className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                       selectedStatus === status
-                        ? 'bg-primary-500 text-white shadow-md scale-105'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200'
+                        ? 'bg-brand-blue text-white shadow-md scale-105'
+                        : 'bg-background text-text-main hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <span className="flex items-center justify-center gap-1">
@@ -703,22 +771,73 @@ export const TicketDetail = () => {
               </div>
 
               {popupError && (
-                <p className="text-red-600 dark:text-red-400 text-xs mb-3 font-medium">{popupError}</p>
+                <p className="text-state-rejected text-xs mb-3 font-medium">{popupError}</p>
               )}
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setShowStatusPopup(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 bg-gray-200 text-text-main rounded-lg text-sm font-medium hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleUpdateStatus}
-                  className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                  className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
                 >
                   Actualizar <i className="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm border border-border">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-state-rejected/10 flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-state-rejected"></i>
+                </div>
+                <h3 className="text-lg font-bold text-text-main">Eliminar Ticket</h3>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                ¿Estás seguro de que deseas eliminar el ticket <strong>#{ticket.id}</strong>? Esta acción no se puede deshacer.
+              </p>
+              {popupError && (
+                <p className="text-state-rejected text-xs mb-3 font-medium">{popupError}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setPopupError('');
+                  }}
+                  className="px-4 py-2 bg-background border border-border text-text-main rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={deleteLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteTicket}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-state-rejected text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin text-xs"></i>
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-trash-alt text-xs"></i>
+                      Eliminar
+                    </>
+                  )}
                 </button>
               </div>
             </div>
