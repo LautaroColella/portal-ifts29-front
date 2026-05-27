@@ -54,17 +54,12 @@ function handleMockRequest(endpoint, options) {
     return mockApi.getTickets(page, limit, title);
   }
 
-  // GET /api/tickets/:id
-  if (endpoint.match(/\/tickets\/\d+/) && method === 'GET') {
-    const id = endpoint.match(/\/tickets\/(\d+)/)[1];
-    return mockApi.getTicketById(id);
-  }
-
   // POST /api/tickets
   if (endpoint === '/tickets' && method === 'POST') {
     return mockApi.createTicket(body);
   }
 
+  // More specific routes must be checked BEFORE generic /tickets/:id
   // PATCH /api/tickets/:id/status
   if (endpoint.match(/\/tickets\/\d+\/status/) && method === 'PATCH') {
     const id = endpoint.match(/\/tickets\/(\d+)\/status/)[1];
@@ -99,6 +94,12 @@ function handleMockRequest(endpoint, options) {
   if (endpoint.match(/\/tickets\/\d+\/history/) && method === 'GET') {
     const id = endpoint.match(/\/tickets\/(\d+)\/history/)[1];
     return mockApi.getHistory(id);
+  }
+
+  // GET /api/tickets/:id (generic - must be last)
+  if (endpoint.match(/\/tickets\/\d+$/) && method === 'GET') {
+    const id = endpoint.match(/\/tickets\/(\d+)/)[1];
+    return mockApi.getTicketById(id);
   }
 
   throw new Error(`Endpoint no implementado: ${method} ${endpoint}`);
