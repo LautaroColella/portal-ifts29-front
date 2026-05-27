@@ -23,10 +23,12 @@ export const TicketDetail = () => {
 
   const [showResponsiblePopup, setShowResponsiblePopup] = useState(false);
   const [showStatusPopup, setShowStatusPopup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedResponsible, setSelectedResponsible] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [responsibleSearch, setResponsibleSearch] = useState('');
   const [popupError, setPopupError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const RESPONSIBLES = Object.values(mockUsers)
     .filter((u) => u.role !== 'Alumno' && u.role !== 'Alumna' && u.role !== 'Automático')
@@ -323,6 +325,21 @@ export const TicketDetail = () => {
     }
   };
 
+  const handleDeleteTicket = async () => {
+    try {
+      setDeleteLoading(true);
+      setPopupError('');
+      await apiFetch(`/tickets/${id}`, {
+        method: 'DELETE',
+      });
+      navigate('/reclamos');
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.message || 'Error al eliminar el ticket.';
+      setPopupError(errorMessage);
+      setDeleteLoading(false);
+    }
+  };
+
   const filteredResponsibles = RESPONSIBLES.filter((r) =>
     r.label.toLowerCase().includes(responsibleSearch.toLowerCase())
   );
@@ -406,6 +423,18 @@ export const TicketDetail = () => {
                 title="Editar estado"
               >
                 <i className="fas fa-pencil-alt text-xs"></i>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDeleteConfirm(true);
+                }}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-state-rejected/10 hover:bg-state-rejected/20 text-state-rejected transition-colors"
+                title="Eliminar ticket"
+              >
+                <i className="fas fa-trash-alt text-xs"></i>
               </button>
             </div>
           </div>
@@ -758,6 +787,57 @@ export const TicketDetail = () => {
                   className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
                 >
                   Actualizar <i className="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm border border-border">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-state-rejected/10 flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-state-rejected"></i>
+                </div>
+                <h3 className="text-lg font-bold text-text-main">Eliminar Ticket</h3>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                ¿Estás seguro de que deseas eliminar el ticket <strong>#{ticket.id}</strong>? Esta acción no se puede deshacer.
+              </p>
+              {popupError && (
+                <p className="text-state-rejected text-xs mb-3 font-medium">{popupError}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setPopupError('');
+                  }}
+                  className="px-4 py-2 bg-background border border-border text-text-main rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={deleteLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteTicket}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-state-rejected text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin text-xs"></i>
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-trash-alt text-xs"></i>
+                      Eliminar
+                    </>
+                  )}
                 </button>
               </div>
             </div>

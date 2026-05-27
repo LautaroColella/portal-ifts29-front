@@ -532,4 +532,46 @@ export const mockApi = {
       data: history,
     };
   },
+
+  // DELETE /api/tickets/:id
+  deleteTicket: async (id) => {
+    await mockDelay(600);
+
+    const ticketId = parseInt(id);
+    const ticketIndex = mockTickets.findIndex((t) => t.id === ticketId);
+
+    if (ticketIndex === -1) {
+      throw {
+        response: {
+          status: 404,
+          data: { error: 'Ticket no encontrado' },
+        },
+      };
+    }
+
+    const deletedTicket = mockTickets[ticketIndex];
+
+    mockTickets.splice(ticketIndex, 1);
+    delete mockComments[ticketId];
+    delete mockMessages[ticketId];
+    delete mockHistory[ticketId];
+
+    if (mockHistory[ticketId]) {
+      mockHistory[ticketId].push({
+        id: Date.now(),
+        ticketId,
+        action: 'TICKET_DELETED',
+        oldValue: null,
+        newValue: null,
+        description: 'Ticket eliminado',
+        performedBy: currentUser,
+        createdAt: new Date(),
+      });
+    }
+
+    return {
+      data: deletedTicket,
+      message: 'Ticket eliminado exitosamente',
+    };
+  },
 };

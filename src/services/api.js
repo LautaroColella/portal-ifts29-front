@@ -96,6 +96,12 @@ function handleMockRequest(endpoint, options) {
     return mockApi.getHistory(id);
   }
 
+  // DELETE /api/tickets/:id
+  if (endpoint.match(/\/tickets\/\d+$/) && method === 'DELETE') {
+    const id = endpoint.match(/\/tickets\/(\d+)/)[1];
+    return mockApi.deleteTicket(id);
+  }
+
   // GET /api/tickets/:id (generic - must be last)
   if (endpoint.match(/\/tickets\/\d+$/) && method === 'GET') {
     const id = endpoint.match(/\/tickets\/(\d+)/)[1];
