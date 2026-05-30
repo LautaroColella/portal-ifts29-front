@@ -3,6 +3,7 @@ import { StatCard } from '../components/metrics/StatCard';
 import { StatusChart } from '../components/metrics/StatusChart';
 import { CategoryChart } from '../components/metrics/CategoryChart';
 import { TimeChart } from '../components/metrics/TimeChart';
+import { Leaderboard } from '../components/metrics/Leaderboard';
 import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
@@ -67,6 +68,16 @@ export const MetricsDashboard = () => {
                     <TimeChart data={data.timeChartData} />
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 min-h-[300px]">
+                    <Leaderboard data={data.leaderboardData} />
+                </div>
+                <div className="lg:col-span-2 min-h-[300px]">
+                   
+                </div>
+            </div>
+
         </div>
     );
 };
