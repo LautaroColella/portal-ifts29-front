@@ -106,6 +106,14 @@ export const calculateMetrics = (tickets) => {
         ...responsibleStats[name]
     })).sort((a, b) => b.closed - a.closed);
 
+    // Tickets recientes (toma los primeros 5, asumiendo que están ordenados de forma descendente)
+    const recentTickets = tickets.slice(0, 5).map(t => ({
+        id: t.id,
+        title: t.title,
+        category: t.category === 'ACADEMIC' ? 'Académico' : t.category === 'INSTITUTIONAL' ? 'Institucional' : t.category === 'TECHNICAL' ? 'Técnico' : 'General',
+        status: t.status === 'OPEN' ? 'Pendiente' : (t.status === 'IN_PROGRESS' || t.status.startsWith('WAITING')) ? 'En proceso' : (t.status === 'RESOLVED' || t.status === 'CLOSED') ? 'Resuelto' : 'Rechazado',
+        date: format(parseISO(t.createdAt), 'dd/MM/yyyy')
+    }));
     
     return {  
         total,
@@ -115,7 +123,8 @@ export const calculateMetrics = (tickets) => {
         statusChartData,
         categoryChartData,
         timeChartData,
-        leaderboardData
+        leaderboardData,
+        recentTickets
     };
 
 };

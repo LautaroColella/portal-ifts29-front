@@ -4,6 +4,7 @@ import { StatusChart } from '../components/metrics/StatusChart';
 import { CategoryChart } from '../components/metrics/CategoryChart';
 import { TimeChart } from '../components/metrics/TimeChart';
 import { Leaderboard } from '../components/metrics/Leaderboard';
+import { RecentTickets } from '../components/metrics/RecentTickets';
 import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import dbData from '../data/db.json';
 import { calculateMetrics } from '../utils/metricsUtils';
@@ -74,7 +75,7 @@ export const MetricsDashboard = () => {
                     <Leaderboard data={data.leaderboardData} />
                 </div>
                 <div className="lg:col-span-2 min-h-[300px]">
-                   
+                    <RecentTickets tickets={data.recentTickets} />
                 </div>
             </div>
 
