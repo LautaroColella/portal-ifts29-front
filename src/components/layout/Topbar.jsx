@@ -1,22 +1,20 @@
-import { ChevronDown, Moon, Sun, Menu } from 'lucide-react';
+import React from 'react';
+import { Search, Bell, ChevronDown, Moon, Sun } from 'lucide-react';
 
-export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
+export const Topbar = ({ toggleDarkMode, isDarkMode }) => {
   return (
-    <header className="h-16 bg-brand-blue text-white flex items-center justify-between px-4 md:px-6 transition-colors duration-300 shrink-0">
-      <div className="flex-1 flex items-center gap-2 md:gap-4 max-w-2xl">
-        <button onClick={toggleSidebar} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-          <Menu className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
-        <div className="relative w-full flex items-center text-text-main hidden sm:flex">
-          {/* <Search className="absolute left-3 w-4 h-4 md:w-5 md:h-5 text-text-secondary" />
+    <header className="h-16 bg-brand-blue text-white flex items-center justify-between px-6 transition-colors duration-300">
+      <div className="flex-1 flex items-center gap-4 max-w-2xl">
+        <div className="relative w-full flex items-center text-text-main">
+          {/* <Search className="absolute left-3 w-5 h-5 text-text-secondary" />
           <input
             type="text"
             placeholder="Buscar reclamos, usuarios, categorías..."
-            className="w-full pl-9 md:pl-10 pr-4 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue/50 text-sm"
+            className="w-full pl-10 pr-4 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue/50 text-sm"
           /> */}
         </div>
       </div>
-
+      
       <div className="flex items-center gap-6">
         <button onClick={toggleDarkMode} className="p-2 hover:bg-white/10 rounded-full transition-colors">
           {isDarkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-white" />}
