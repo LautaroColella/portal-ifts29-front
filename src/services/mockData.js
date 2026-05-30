@@ -17,6 +17,7 @@ export const mockUsers = {
 };
 
 export const currentUser = mockUsers[1];
+export const studentUser = mockUsers[2];
 
 export const mockTickets = [
   {
