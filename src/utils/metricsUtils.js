@@ -23,6 +23,7 @@ export const calculateMetrics = (tickets) => {
      
     const categoryCount = { ACADEMIC: 0, INSTITUTIONAL: 0, TECHNICAL: 0, GENERAL: 0 };
     const ticketsByDate = {}; // Format: YYYY-MM-DD
+    const responsibleStats = {}; // { [name]: { closed: 0, active: 0 } }
 
     tickets.forEach(ticket => {
         const createdAt = parseISO(ticket.createdAt);
@@ -58,6 +59,18 @@ export const calculateMetrics = (tickets) => {
         const dateKey = format(createdAt, 'yyyy-MM-dd');
         ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + 1;
 
+        // Tickets según asignados
+        if (ticket.assignedTo?.name) {
+            const staffName = ticket.assignedTo.name;
+            if (!responsibleStats[staffName]) responsibleStats[staffName] = { closed: 0, active: 0 };
+            
+            if (statusGroups.resolved.includes(ticket.status)) {
+                responsibleStats[staffName].closed++;
+            } else if (isPending) {
+                responsibleStats[staffName].active++;
+            }
+        }
+    
     });
 
     // Cálculo de promedios
@@ -87,6 +100,12 @@ export const calculateMetrics = (tickets) => {
         tickets: ticketsByDate[dateKey] || 0
         });
     }
+
+    const leaderboardData = Object.keys(responsibleStats).map(name => ({
+        name,
+        ...responsibleStats[name]
+    })).sort((a, b) => b.closed - a.closed);
+
     
     return {  
         total,
@@ -95,7 +114,8 @@ export const calculateMetrics = (tickets) => {
         pendingOld7,
         statusChartData,
         categoryChartData,
-        timeChartData
+        timeChartData,
+        leaderboardData
     };
 
 };
