@@ -25,8 +25,6 @@ export const CreateTicket = () => {
   const [gradeCorrectionGrade, setGradeCorrectionGrade] = useState('');
   const [gradeCorrectionExamDate, setGradeCorrectionExamDate] = useState('');
 
-  const [certificateCompanyName, setCertificateCompanyName] = useState('');
-
   const [examDate, setExamDate] = useState('');
 
   const [degreeGender, setDegreeGender] = useState('');
@@ -86,9 +84,6 @@ export const CreateTicket = () => {
     if (subcategory === 'GRADE_RECORD_CORRECTION_REQUEST') {
       return { grade: gradeCorrectionGrade, examDate: gradeCorrectionExamDate };
     }
-    if (subcategory === 'NEW_STUDENT_CERTIFICATE_REQUEST') {
-      return certificateCompanyName.trim() ? { companyName: certificateCompanyName.trim() } : null;
-    }
     if (subcategory === 'EXAM_CERTIFICATE_REQUEST') {
       return { examDate };
     }
@@ -119,7 +114,7 @@ export const CreateTicket = () => {
       setLoading(true);
       setApiError('');
 
-      const hideSubject = category === 'TECHNICAL' || subcategory === 'NEW_STUDENT_CERTIFICATE_REQUEST';
+      const hideSubject = category === 'TECHNICAL';
       const hideCommission = category === 'TECHNICAL';
 
       const ticketData = {
@@ -132,12 +127,13 @@ export const CreateTicket = () => {
         metadata: buildMetadata(),
       };
 
-      await apiFetch('/tickets', {
+      const response = await apiFetch('/tickets', {
         method: 'POST',
         body: JSON.stringify(ticketData),
       });
 
-      navigate('/reclamos');
+      const createdTicketId = response.data?.id || response.id;
+      navigate(`/reclamos/${createdTicketId}`);
     } catch (error) {
       const errorMessage = (() => {
         if (error.response?.data?.error) {
@@ -174,7 +170,6 @@ export const CreateTicket = () => {
     INSTITUTIONAL: [
       { value: 'SUBJECT_EQUIVALENCY_REQUEST', label: 'Solicitud de equivalencia de materia' },
       { value: 'GRADE_RECORD_CORRECTION_REQUEST', label: 'Solicitud de corrección de nota' },
-      { value: 'NEW_STUDENT_CERTIFICATE_REQUEST', label: 'Solicitud de certificado de alumno regular' },
       { value: 'EXAM_CERTIFICATE_REQUEST', label: 'Solicitud de certificado de examen' },
       { value: 'DEGREE_PROCESS_REQUEST', label: 'Solicitud de trámite de título' },
       { value: 'CLASS_SECTION_CHANGE_REQUEST', label: 'Solicitud de cambio de comisión' },
@@ -303,8 +298,8 @@ export const CreateTicket = () => {
             </select>
           </div>
 
-          {/* Subject & Commission Row - Hidden for TECHNICAL and NEW_STUDENT_CERTIFICATE_REQUEST */}
-          {category !== 'TECHNICAL' && subcategory !== 'NEW_STUDENT_CERTIFICATE_REQUEST' && (
+          {/* Subject & Commission Row - Hidden for TECHNICAL */}
+          {category !== 'TECHNICAL' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="subject" className={labelClass}>Materia</label>
@@ -365,26 +360,16 @@ export const CreateTicket = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Nota final *</label>
-                  <input
-                    type="number"
-                    value={equivalencyGrade}
-                    onChange={(e) => setEquivalencyGrade(e.target.value)}
-                    placeholder="Nota obtenida"
-                    disabled={loading}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>Documentación *</label>
-                  <input
-                    type="file"
-                    disabled={loading}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-text-main file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-blue file:text-white hover:file:bg-brand-dark file:cursor-pointer disabled:opacity-50"
-                  />
-                </div>
+              <div>
+                <label className={labelClass}>Nota final *</label>
+                <input
+                  type="number"
+                  value={equivalencyGrade}
+                  onChange={(e) => setEquivalencyGrade(e.target.value)}
+                  placeholder="Nota obtenida"
+                  disabled={loading}
+                  className={inputClass}
+                />
               </div>
             </div>
           )}
@@ -415,32 +400,6 @@ export const CreateTicket = () => {
                     className={inputClass}
                   />
                 </div>
-              </div>
-              <div>
-                <label className={labelClass}>Constancia *</label>
-                <input
-                  type="file"
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-text-main file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-blue file:text-white hover:file:bg-brand-dark file:cursor-pointer disabled:opacity-50"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Conditional Fields: NEW_STUDENT_CERTIFICATE_REQUEST */}
-          {category === 'INSTITUTIONAL' && subcategory === 'NEW_STUDENT_CERTIFICATE_REQUEST' && (
-            <div className={sectionCardClass}>
-              <h3 className={sectionTitleClass}>Certificado de Alumno Regular</h3>
-              <div>
-                <label className={labelClass}>Empresa o institución destino (opcional)</label>
-                <input
-                  type="text"
-                  value={certificateCompanyName}
-                  onChange={(e) => setCertificateCompanyName(e.target.value)}
-                  placeholder="En caso de necesitarlo, escribir el nombre de la empresa o institución a la cual debe presentarse el certificado."
-                  disabled={loading}
-                  className={inputClass}
-                />
               </div>
             </div>
           )}
