@@ -171,6 +171,63 @@ export const mockHistory = {
   ],
 };
 
+export const mockNotifications = [
+  {
+    id: 1,
+    message: 'Nuevo ticket #1 asignado: Problema con calificación de examen',
+    type: 'TICKET_CREATED',
+    read: false,
+    ticket: { id: 1, title: 'Problema con calificación de examen' },
+    recipient: { id: 6 },
+    createdAt: new Date(Date.now() - 3600000),
+  },
+  {
+    id: 2,
+    message: 'Ticket #1 cambió estado a En Proceso',
+    type: 'STATUS_CHANGED',
+    read: false,
+    ticket: { id: 1, title: 'Problema con calificación de examen' },
+    recipient: { id: 1 },
+    createdAt: new Date(Date.now() - 7200000),
+  },
+  {
+    id: 3,
+    message: 'Nuevo comentario en ticket #2',
+    type: 'COMMENT_ADDED',
+    read: true,
+    ticket: { id: 2, title: 'Acceso a plataforma educativa' },
+    recipient: { id: 11 },
+    createdAt: new Date(Date.now() - 86400000),
+  },
+  {
+    id: 4,
+    message: 'Nuevo mensaje en ticket #3',
+    type: 'MESSAGE_ADDED',
+    read: false,
+    ticket: { id: 3, title: 'Solicitud de cambio de horario' },
+    recipient: { id: 1 },
+    createdAt: new Date(Date.now() - 172800000),
+  },
+  {
+    id: 5,
+    message: 'Nuevo ticket #5 asignado: Solicitud de certificado de matrícula',
+    type: 'TICKET_CREATED',
+    read: true,
+    ticket: { id: 5, title: 'Solicitud de certificado de matrícula' },
+    recipient: { id: 1 },
+    createdAt: new Date(Date.now() - 432000000),
+  },
+  {
+    id: 6,
+    message: 'Ticket #4 cambió estado a En Proceso',
+    type: 'STATUS_CHANGED',
+    read: false,
+    ticket: { id: 4, title: 'Problema con carga de trabajos prácticos' },
+    recipient: { id: 1 },
+    createdAt: new Date(Date.now() - 259200000),
+  },
+];
+
 // Mock API delay for more realistic testing
 export const mockDelay = (ms = 800) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -573,6 +630,60 @@ export const mockApi = {
     return {
       data: deletedTicket,
       message: 'Ticket eliminado exitosamente',
+    };
+  },
+
+  // GET /api/notifications?userId=X&unreadOnly=Y
+  getNotifications: async (userId, unreadOnly = false) => {
+    await mockDelay();
+
+    let filtered = mockNotifications.filter((n) => n.recipient?.id === parseInt(userId));
+
+    if (unreadOnly) {
+      filtered = filtered.filter((n) => !n.read);
+    }
+
+    return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  // PATCH /api/notifications/:id/read
+  markNotificationAsRead: async (id) => {
+    await mockDelay(400);
+
+    const notificationIndex = mockNotifications.findIndex((n) => n.id === parseInt(id));
+
+    if (notificationIndex === -1) {
+      throw {
+        response: {
+          status: 404,
+          data: { error: 'Notificación no encontrada' },
+        },
+      };
+    }
+
+    mockNotifications[notificationIndex] = {
+      ...mockNotifications[notificationIndex],
+      read: true,
+    };
+
+    return {
+      data: mockNotifications[notificationIndex],
+      message: 'Notificación marcada como leída',
+    };
+  },
+
+  // PATCH /api/notifications/read-all
+  markAllNotificationsAsRead: async (userId) => {
+    await mockDelay(600);
+
+    mockNotifications.forEach((n) => {
+      if (n.recipient?.id === parseInt(userId)) {
+        n.read = true;
+      }
+    });
+
+    return {
+      message: 'Todas las notificaciones marcadas como leídas',
     };
   },
 };
