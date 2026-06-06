@@ -4,7 +4,7 @@ import { Inicio, Ayuda } from './pages/Placeholders';
 import { TicketsList } from './pages/TicketsList';
 import { CreateTicket } from './pages/CreateTicket';
 import { TicketDetail } from './pages/TicketDetail';
-import { Dashboard } from './pages/Dashboard';
+import { NotificationsPage } from './pages/NotificationsPage';
 import { MetricsDashboard } from './pages/MetricsDashboard';
 
 function App() {
@@ -16,6 +16,7 @@ function App() {
           <Route path="reclamos" element={<TicketsList />} />
           <Route path="reclamos/create" element={<CreateTicket />} />
           <Route path="reclamos/:id" element={<TicketDetail />} />
+          <Route path="notificaciones" element={<NotificationsPage />} />
           <Route path="reportes" element={<MetricsDashboard />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="*" element={<Navigate to="/" replace />} />
