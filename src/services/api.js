@@ -108,25 +108,5 @@ function handleMockRequest(endpoint, options) {
     return mockApi.getTicketById(id);
   }
 
-  // GET /api/notifications?userId=X&unreadOnly=Y
-  if (endpoint.includes('/notifications') && !endpoint.match(/\/notifications\/\d+/) && method === 'GET') {
-    const url = new URL(`http://localhost${endpoint}`);
-    const params = new URLSearchParams(url.search);
-    const userId = params.get('userId');
-    const unreadOnly = params.get('unreadOnly') === 'true';
-    return mockApi.getNotifications(userId, unreadOnly);
-  }
-
-  // PATCH /api/notifications/:id/read
-  if (endpoint.match(/\/notifications\/\d+\/read/) && method === 'PATCH') {
-    const id = endpoint.match(/\/notifications\/(\d+)\/read/)[1];
-    return mockApi.markNotificationAsRead(id);
-  }
-
-  // PATCH /api/notifications/read-all
-  if (endpoint === '/notifications/read-all' && method === 'PATCH') {
-    return mockApi.markAllNotificationsAsRead(body?.userId);
-  }
-
   throw new Error(`Endpoint no implementado: ${method} ${endpoint}`);
 }

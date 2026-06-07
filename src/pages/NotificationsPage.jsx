@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
-import { apiFetch } from '../services/api';
+import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notificationApi';
 import { currentUser } from '../services/mockData';
 
 const NOTIFICATION_TYPE_CONFIG = {
@@ -37,11 +37,11 @@ export const NotificationsPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const LIMIT = 10;
 
-  const fetchNotifications = async () => {
+  const fetchNotificationsData = async () => {
     try {
       setLoading(true);
       setApiError('');
-      const data = await apiFetch(`/notifications?userId=${currentUser.id}&unreadOnly=${unreadOnly}`);
+      const data = await fetchNotifications(currentUser.id, unreadOnly);
       const list = Array.isArray(data) ? data : [];
       setNotifications(list);
     } catch (err) {
@@ -54,12 +54,12 @@ export const NotificationsPage = () => {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchNotifications();
+    fetchNotificationsData();
   }, [unreadOnly]);
 
   const handleMarkAsRead = async (id) => {
     try {
-      await apiFetch(`/notifications/${id}/read`, { method: 'PATCH' });
+      await markNotificationAsRead(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch {
       // silently fail
@@ -78,10 +78,7 @@ export const NotificationsPage = () => {
   const handleMarkAllAsRead = async () => {
     try {
       setActionLoading(true);
-      await apiFetch('/notifications/read-all', {
-        method: 'PATCH',
-        body: JSON.stringify({ userId: currentUser.id }),
-      });
+      await markAllNotificationsAsRead(currentUser.id);
       if (unreadOnly) {
         setNotifications([]);
       } else {

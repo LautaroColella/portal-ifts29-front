@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Moon, Sun, Menu, Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../../services/api';
+import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../services/notificationApi';
 import { currentUser } from '../../services/mockData';
 
 const NOTIFICATION_TYPE_CONFIG = {
@@ -34,9 +34,9 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const dropdownRef = useRef(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotificationsData = async () => {
     try {
-      const data = await apiFetch(`/notifications?userId=${currentUser.id}`);
+      const data = await fetchNotifications(currentUser.id);
       const list = Array.isArray(data) ? data : [];
       setNotifications(list);
       setUnreadCount(list.filter((n) => !n.read).length);
@@ -48,8 +48,8 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    fetchNotificationsData();
+    const interval = setInterval(fetchNotificationsData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -66,9 +66,7 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
       try {
-        await apiFetch(`/notifications/${notification.id}/read`, {
-          method: 'PATCH',
-        });
+        await markNotificationAsRead(notification.id);
         setNotifications((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
         );
@@ -86,10 +84,7 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   const handleMarkAllAsRead = async () => {
     try {
       setDropdownLoading(true);
-      await apiFetch('/notifications/read-all', {
-        method: 'PATCH',
-        body: JSON.stringify({ userId: currentUser.id }),
-      });
+      await markAllNotificationsAsRead(currentUser.id);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch {
