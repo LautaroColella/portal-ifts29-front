@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, ClipboardList, Bell, BarChart2, HelpCircle } from 'lucide-react';
+import { Home, ClipboardList, Bell, BarChart2, HelpCircle, Users } from 'lucide-react';
 
 const LogoSVG = ({ className }) => (
   <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -47,6 +47,7 @@ const LogoSVG = ({ className }) => (
 export const Sidebar = ({ isOpen }) => {
   const menuItems = [
     { icon: Home, label: 'Inicio', path: '/' },
+    { icon: Users, label: 'Usuarios', path: '/usuarios' },
     { icon: ClipboardList, label: 'Reclamos', path: '/reclamos' },
     { icon: Bell, label: 'Notificaciones', path: '/notificaciones' },
     { icon: BarChart2, label: 'Reportes', path: '/reportes' },
