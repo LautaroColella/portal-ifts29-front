@@ -6,12 +6,14 @@ import { CreateTicket } from './pages/CreateTicket';
 import { TicketDetail } from './pages/TicketDetail';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { MetricsDashboard } from './pages/MetricsDashboard';
+import { Login } from './pages/Login';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
+          <Route path="/login" element={<Login />} />        
           <Route index element={<Inicio />} />
           <Route path="reclamos" element={<TicketsList />} />
           <Route path="reclamos/create" element={<CreateTicket />} />
