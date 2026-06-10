@@ -7,6 +7,7 @@ import { TicketDetail } from './pages/TicketDetail';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { MetricsDashboard } from './pages/MetricsDashboard';
 import { Login } from './pages/Login';
+import { Users } from './pages/Users';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route path="/login" element={<Login />} />        
           <Route index element={<Inicio />} />
+          <Route path="usuarios" element={<Users />} />
           <Route path="reclamos" element={<TicketsList />} />
           <Route path="reclamos/create" element={<CreateTicket />} />
           <Route path="reclamos/:id" element={<TicketDetail />} />
