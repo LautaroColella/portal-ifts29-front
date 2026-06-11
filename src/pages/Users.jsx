@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, MoreVertical, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { userService } from '../services/userService';
+import { UserForm } from '../components/users/UserForm';
 
-export const Users = () => {  
+export const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const fetchUsers = async () => {
     try {
@@ -24,6 +27,41 @@ export const Users = () => {
     fetchUsers();
   }, []);
 
+  const handleOpenForm = (user = null) => {
+    setSelectedUser(user);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setSelectedUser(null);
+    setIsFormOpen(false);
+  };
+
+  const handleSaveUser = async (userData) => {
+    try {
+      if (selectedUser) {
+        await userService.updateUser(selectedUser.id, userData);
+      } else {
+        await userService.createUser(userData);
+      }
+      fetchUsers();
+      handleCloseForm();
+    } catch (error) {
+      console.error("Error al guardar usuario:", error);
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
+      try {
+        await userService.deleteUser(id);
+        fetchUsers();
+      } catch (error) {
+        console.error("Error al eliminar usuario:", error);
+      }
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -33,7 +71,6 @@ export const Users = () => {
       user.dni.includes(term)
     );
   });
-
 
   return (
     <div className="space-y-6">
@@ -45,7 +82,7 @@ export const Users = () => {
           </p>
         </div>
         <button
-          onClick=""
+          onClick={() => handleOpenForm()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all font-medium text-sm"
         >
           <Plus className="w-5 h-5" />
@@ -62,8 +99,8 @@ export const Users = () => {
             type="text"
             className="block w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-background text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-all"
             placeholder="Buscar por nombre, apellido, DNI o email..."
-            value=""
-            onChange= ""
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
@@ -83,7 +120,7 @@ export const Users = () => {
                 </tr>
               </thead>
               <tbody>
-               {filteredUsers.length > 0 ? (
+                {filteredUsers.length > 0 ? (
                   filteredUsers.map((user, index) => (
                     <motion.tr
                       initial={{ opacity: 0, y: 10 }}
@@ -113,13 +150,15 @@ export const Users = () => {
                       </td>
                       <td className="py-4 px-4 text-right">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button                            
+                          <button
+                            onClick={() => handleOpenForm(user)}
                             className="p-1.5 text-text-secondary hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
                             title="Editar"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button                            
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
                             className="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                             title="Eliminar"
                           >
@@ -141,7 +180,14 @@ export const Users = () => {
           )}
         </div>
       </div>
-     
+
+      {isFormOpen && (
+        <UserForm
+          user={selectedUser}
+          onClose={handleCloseForm}
+          onSave={handleSaveUser}
+        />
+      )}
     </div>
   );
 };
