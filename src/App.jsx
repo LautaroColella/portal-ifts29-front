@@ -4,7 +4,6 @@ import { CreateTicket } from "./pages/CreateTicket";
 import { Login } from "./pages/Login";
 import { MetricsDashboard } from "./pages/MetricsDashboard";
 import { NotificationsPage } from "./pages/NotificationsPage";
-import { Ayuda } from "./pages/Placeholders";
 import { TicketDetail } from "./pages/TicketDetail";
 import { TicketsList } from "./pages/TicketsList";
 import { Users } from "./pages/Users";
@@ -22,7 +21,6 @@ function App() {
           <Route path="reclamos/:id" element={<TicketDetail />} />
           <Route path="notificaciones" element={<NotificationsPage />} />
           <Route path="reportes" element={<MetricsDashboard />} />
-          <Route path="ayuda" element={<Ayuda />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
