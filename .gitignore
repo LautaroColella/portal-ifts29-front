@@ -25,7 +25,7 @@ dist-ssr
 *.sw?
 
 # AI Context Files (Local Only)
-context/
+/context/
 .context/
 .agents/
 agents/
