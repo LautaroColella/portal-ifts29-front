@@ -1,38 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from './api';
 
-async function apiRequest(endpoint, options = {}) {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw {
-      response: {
-        status: response.status,
-        data: errorData,
-      },
-    };
-  }
-
-  return response.json();
-}
-
-export const fetchNotifications = async (userId, unreadOnly = false) => {
-  return apiRequest(`/notifications?userId=${userId}&unreadOnly=${unreadOnly}`);
+export const fetchNotifications = async (unreadOnly = false) => {
+  const params = new URLSearchParams();
+  if (unreadOnly) params.set('unreadOnly', 'true');
+  return apiFetch(`/notifications?${params.toString()}`);
 };
 
 export const markNotificationAsRead = async (id) => {
-  return apiRequest(`/notifications/${id}/read`, { method: 'PATCH' });
+  return apiFetch(`/notifications/${id}/read`, { method: 'PATCH' });
 };
 
-export const markAllNotificationsAsRead = async (userId) => {
-  return apiRequest('/notifications/read-all', {
-    method: 'PATCH',
-    body: JSON.stringify({ userId }),
-  });
+export const markAllNotificationsAsRead = async () => {
+  return apiFetch('/notifications/read-all', { method: 'PATCH' });
 };
