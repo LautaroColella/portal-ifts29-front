@@ -224,7 +224,11 @@ export const TicketsList = () => {
                   {/* Responsable */}
                   <div className="mb-3">
                     <p className="text-xs font-semibold text-text-secondary mb-1">Responsable</p>
-                    <p className="text-sm text-text-main">{ticket.assignedTo?.name || 'Sin asignar'}</p>
+                    <p className="text-sm text-text-main">
+                      {ticket.assignedTo
+                        ? `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}`
+                        : 'Sin asignar'}
+                    </p>
                   </div>
 
                   {/* Category & Subcategory */}
@@ -291,7 +295,11 @@ export const TicketsList = () => {
                   >
                     <td className="px-4 py-3 text-sm text-text-main">{ticket.id}</td>
                     <td className="px-4 py-3 text-sm text-text-main font-medium max-w-xs truncate">{ticket.title}</td>
-                    <td className="px-4 py-3 text-sm text-text-main">{ticket.assignedTo?.name || 'Sin asignar'}</td>
+                    <td className="px-4 py-3 text-sm text-text-main">
+                      {ticket.assignedTo
+                        ? `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}`
+                        : 'Sin asignar'}
+                    </td>
                     <td className="px-4 py-3 text-sm text-text-main">{ticket.category || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm text-text-main">{ticket.subcategory || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm text-text-main">{formatDate(ticket.createdAt)}</td>

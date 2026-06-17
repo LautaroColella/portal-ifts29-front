@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../services/api';
-import { studentUser } from '../services/mockData';
-
-const STUDENT_DNI = '38.123.456';
+import { useAuth } from '../context/AuthContext';
 
 export const CreateTicket = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
@@ -221,15 +220,15 @@ export const CreateTicket = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
           <div className="bg-background rounded-lg px-4 py-3">
             <p className="text-xs text-text-secondary font-medium mb-1">Nombre y Apellido</p>
-            <p className="text-sm text-text-main font-semibold">{studentUser.name}</p>
+            <p className="text-sm text-text-main font-semibold">{currentUser?.firstName} {currentUser?.lastName}</p>
           </div>
           <div className="bg-background rounded-lg px-4 py-3">
             <p className="text-xs text-text-secondary font-medium mb-1">DNI</p>
-            <p className="text-sm text-text-main font-semibold">{STUDENT_DNI}</p>
+            <p className="text-sm text-text-main font-semibold">{currentUser?.dni || 'N/A'}</p>
           </div>
           <div className="bg-background rounded-lg px-4 py-3">
             <p className="text-xs text-text-secondary font-medium mb-1">Email</p>
-            <p className="text-sm text-text-main font-semibold">{studentUser.email}</p>
+            <p className="text-sm text-text-main font-semibold">{currentUser?.email}</p>
           </div>
         </div>
       </div>

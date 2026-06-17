@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notificationApi';
-import { currentUser } from '../services/mockData';
 
 const NOTIFICATION_TYPE_CONFIG = {
   TICKET_CREATED: { icon: ClipboardList, label: 'Ticket creado' },
@@ -41,7 +40,7 @@ export const NotificationsPage = () => {
     try {
       setLoading(true);
       setApiError('');
-      const data = await fetchNotifications(currentUser.id, unreadOnly);
+      const data = await fetchNotifications(unreadOnly);
       const list = Array.isArray(data) ? data : [];
       setNotifications(list);
     } catch (err) {
@@ -53,14 +52,13 @@ export const NotificationsPage = () => {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotificationsData();
   }, [unreadOnly]);
 
   const handleMarkAsRead = async (id) => {
     try {
       await markNotificationAsRead(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     } catch {
       // silently fail
     }
@@ -78,7 +76,7 @@ export const NotificationsPage = () => {
   const handleMarkAllAsRead = async () => {
     try {
       setActionLoading(true);
-      await markAllNotificationsAsRead(currentUser.id);
+      await markAllNotificationsAsRead();
       if (unreadOnly) {
         setNotifications([]);
       } else {
@@ -100,7 +98,6 @@ export const NotificationsPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Bell className="w-6 h-6 text-brand-blue" />
@@ -115,7 +112,6 @@ export const NotificationsPage = () => {
         </button>
       </div>
 
-      {/* Filter Toggle */}
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={() => { setUnreadOnly(false); setPage(1); }}
@@ -139,14 +135,12 @@ export const NotificationsPage = () => {
         </button>
       </div>
 
-      {/* Error Message */}
       {apiError && (
         <div className="mb-4 p-3 bg-state-rejected/10 border border-state-rejected/30 rounded-lg">
           <p className="text-state-rejected text-sm">{apiError}</p>
         </div>
       )}
 
-      {/* Notifications List */}
       <div className="flex-1 overflow-auto">
         {loading ? (
           <p className="text-sm text-text-secondary text-center py-8">Cargando notificaciones...</p>
@@ -168,17 +162,12 @@ export const NotificationsPage = () => {
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    {/* Read indicator */}
                     <div className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${
                       !notification.read ? 'bg-brand-blue' : 'bg-transparent'
                     }`} />
-
-                    {/* Icon */}
                     <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center shrink-0">
                       <IconComponent className="w-4 h-4 text-text-secondary" />
                     </div>
-
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-semibold text-text-secondary">{config.label}</span>
@@ -191,12 +180,10 @@ export const NotificationsPage = () => {
                       <p className="text-sm text-text-main leading-snug">{notification.message}</p>
                       {notification.ticket && (
                         <p className="text-xs text-brand-blue mt-1 hover:underline">
-                          Ver ticket: {notification.ticket.title}
+                          Ver ticket #{notification.ticket.id}
                         </p>
                       )}
                     </div>
-
-                    {/* Time */}
                     <span className="text-xs text-text-secondary shrink-0 mt-1">
                       {formatRelativeTime(notification.createdAt)}
                     </span>
@@ -208,7 +195,6 @@ export const NotificationsPage = () => {
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
           <p className="text-sm text-text-secondary">

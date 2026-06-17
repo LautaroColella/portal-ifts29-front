@@ -1,21 +1,40 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn } from 'lucide-react';
-
+import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!email.trim() || !password.trim()) {
+      setError('Completá todos los campos');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await login(email.trim(), password);
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-     
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-green-500/20 rounded-full blur-3xl pointer-events-none" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -30,7 +49,7 @@ export const Login = () => {
         </div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 text-sm font-medium text-center"
@@ -39,7 +58,7 @@ export const Login = () => {
           </motion.div>
         )}
 
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-main block">Correo Electrónico</label>
             <div className="relative">
@@ -53,14 +72,13 @@ export const Login = () => {
                 placeholder="ejemplo@ifts29.edu.ar"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-text-main block">Contraseña</label>              
-            </div>
+            <label className="text-sm font-medium text-text-main block">Contraseña</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-text-secondary" />
@@ -72,30 +90,27 @@ export const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
             </div>
           </div>
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-          >          
-            <LogIn className="w-5 h-5" />
-            <span>Iniciar Sesión</span>            
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <LogIn className="w-5 h-5" />
+            )}
+            <span>{loading ? 'Ingresando...' : 'Iniciar Sesión'}</span>
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          <p className="text-text-secondary">
-            ¿No tienes una cuenta?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-              Regístrate aquí
-            </Link>
-          </p>
-        </div>
-
         <div className="mt-8 text-center text-sm text-text-secondary">
-          <p>Portal IFTS 29 • Sistema de Reclamos</p>
+          <p>Portal IFTS 29 - Sistema de Reclamos</p>
         </div>
       </motion.div>
     </div>

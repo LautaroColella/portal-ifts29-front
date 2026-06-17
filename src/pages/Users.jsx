@@ -39,10 +39,14 @@ export const Users = () => {
 
   const handleSaveUser = async (userData) => {
     try {
+      const payload = { ...userData };
+      if (!payload.password) delete payload.password;
+      if (payload.role !== 'STAFF') delete payload.staffType;
+
       if (selectedUser) {
-        await userService.updateUser(selectedUser.id, userData);
+        await userService.updateUser(selectedUser.id, payload);
       } else {
-        await userService.createUser(userData);
+        await userService.createUser(payload);
       }
       fetchUsers();
       handleCloseForm();
