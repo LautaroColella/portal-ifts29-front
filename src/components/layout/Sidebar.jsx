@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { ClipboardList, Bell, BarChart2, Users } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const LogoSVG = ({ className }) => (
   <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -17,10 +18,10 @@ const LogoSVG = ({ className }) => (
         <stop offset="100%" stopColor="black" stopOpacity="0.3" />
       </linearGradient>
     </defs>
-    
+
     {/* Outer border & white background */}
     <rect x="2" y="2" width="96" height="96" fill="#ffffff" stroke="#9ca3af" strokeWidth="2" rx="2" />
-    
+
     {/* Quadrants */}
     <rect x="4" y="4" width="45" height="45" fill="#1565C0" />
     <rect x="4" y="4" width="45" height="45" fill="url(#bevel)" />
@@ -45,15 +46,20 @@ const LogoSVG = ({ className }) => (
 );
 
 export const Sidebar = ({ isOpen }) => {
-  const menuItems = [
-    { icon: Users, label: 'Usuarios', path: '/usuarios' },
+  const { user } = useAuth();
+  const role = user?.role;
+
+  const allMenuItems = [
+    { icon: Users, label: 'Usuarios', path: '/usuarios', roles: ['ADMIN'] },
     { icon: ClipboardList, label: 'Reclamos', path: '/reclamos' },
     { icon: Bell, label: 'Notificaciones', path: '/notificaciones' },
-    { icon: BarChart2, label: 'Reportes', path: '/reportes' }
+    { icon: BarChart2, label: 'Reportes', path: '/reportes', roles: ['ADMIN', 'MANAGEMENT'] },
   ];
 
+  const menuItems = allMenuItems.filter((item) => !item.roles || item.roles.includes(role));
+
   return (
-    <aside 
+    <aside
       className={`bg-surface border-r border-border h-screen flex flex-col transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
         isOpen ? 'w-64' : 'w-20'
       }`}
@@ -66,7 +72,7 @@ export const Sidebar = ({ isOpen }) => {
             <p className="text-xs text-text-secondary">Sistema de Reclamos</p>
           </div>
         </div>
-        
+
         <nav className={`flex-1 py-4 space-y-2 transition-all duration-300 ${isOpen ? 'px-4' : 'px-3'}`}>
           {menuItems.map((item) => (
             <NavLink

@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Moon, Sun, Menu, Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail } from 'lucide-react';
+import { ChevronDown, Moon, Sun, Menu, Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../services/notificationApi';
-import { currentUser } from '../../services/mockData';
+import { useAuth } from '../../context/AuthContext';
+
+const ROLE_LABELS = {
+  ADMIN: 'Administrador',
+  MANAGEMENT: 'Dirección',
+  STAFF: 'Personal',
+  STUDENT: 'Estudiante',
+};
 
 const NOTIFICATION_TYPE_CONFIG = {
   TICKET_CREATED: { icon: ClipboardList, label: 'Ticket creado' },
@@ -28,15 +35,18 @@ const formatRelativeTime = (date) => {
 
 export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   const fetchNotificationsData = async () => {
     try {
-      const data = await fetchNotifications(currentUser.id);
+      const data = await fetchNotifications();
       const list = Array.isArray(data) ? data : [];
       setNotifications(list);
       setUnreadCount(list.filter((n) => !n.read).length);
@@ -47,7 +57,6 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotificationsData();
     const interval = setInterval(fetchNotificationsData, 30000);
     return () => clearInterval(interval);
@@ -57,6 +66,9 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowDropdown(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -84,7 +96,7 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
   const handleMarkAllAsRead = async () => {
     try {
       setDropdownLoading(true);
-      await markAllNotificationsAsRead(currentUser.id);
+      await markAllNotificationsAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch {
@@ -94,6 +106,16 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
     }
   };
 
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    logout();
+    navigate('/login');
+  };
+
+  const userInitials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
+    : '??';
+
   const recentNotifications = notifications.slice(0, 5);
 
   return (
@@ -102,8 +124,6 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
         <button onClick={toggleSidebar} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
           <Menu className="w-5 h-5 md:w-6 md:h-6" />
         </button>
-        <div className="relative w-full flex items-center text-text-main hidden sm:flex">
-        </div>
       </div>
 
       <div className="flex items-center gap-6">
@@ -125,10 +145,8 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
             )}
           </button>
 
-          {/* Dropdown */}
           {showDropdown && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <h3 className="text-sm font-semibold text-text-main">Notificaciones</h3>
                 {unreadCount > 0 && (
@@ -136,7 +154,6 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
                 )}
               </div>
 
-              {/* List */}
               <div className="max-h-80 overflow-y-auto">
                 {recentNotifications.length === 0 ? (
                   <p className="text-sm text-text-secondary text-center py-6">No hay notificaciones.</p>
@@ -171,10 +188,9 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="px-4 py-3 border-t border-border bg-background">
                 <button
-                  onClick={() => navigate('/notificaciones')}
+                  onClick={() => { setShowDropdown(false); navigate('/notificaciones'); }}
                   className="w-full text-center text-xs text-brand-blue font-medium hover:underline mb-2"
                 >
                   Ver todas
@@ -193,15 +209,41 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
           )}
         </div>
 
-        <div className="flex items-center gap-3 cursor-pointer hover:bg-white/10 p-2 rounded-lg transition-colors">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold text-sm">
-            JP
-          </div>
-          <div className="hidden md:block">
-            <p className="text-sm font-semibold leading-none">Juan Pérez</p>
-            <p className="text-xs text-white/70 mt-1">Administrador</p>
-          </div>
-          <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
+        {/* User Menu */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-lg transition-colors"
+          >
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold text-sm">
+              {userInitials}
+            </div>
+            <div className="hidden md:block text-left">
+              <p className="text-sm font-semibold leading-none">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-white/70 mt-1">
+                {ROLE_LABELS[user?.role] || user?.role}
+              </p>
+            </div>
+            <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
+          </button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-medium text-text-main">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-text-secondary">{user?.email}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Cerrar sesión
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
