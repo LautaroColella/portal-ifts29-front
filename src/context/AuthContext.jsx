@@ -48,6 +48,25 @@ export const AuthProvider = ({ children }) => {
     setToken(data.token);
   };
 
+  const register = async (userData) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      return { success: false, error: error.error || error.message || 'Error al registrar' };
+    }
+    // Registro exitoso → login automático
+    await login(userData.email, userData.password);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -55,7 +74,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -11,6 +11,13 @@ export const Users = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  const roleLabels = {
+    ADMIN: 'Administrador',
+    STAFF: 'Staff',
+    STUDENT: 'Estudiante',
+    MANAGEMENT: 'Dirección',
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -149,7 +156,8 @@ export const Users = () => {
                             user.role === 'MANAGEMENT' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
                             'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                           }`}>
-                          {user.role} {user.staffType ? `(${user.staffType})` : ''}
+                          {/* {user.role} {user.staffType ? `(${user.staffType})` : ''} */}
+                          {roleLabels[user.role] || user.role} {user.staffType ? `(${user.staffType})` : ''}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-right">

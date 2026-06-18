@@ -2,8 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const roles = ['STUDENT', 'STAFF', 'MANAGEMENT', 'ADMIN'];
-const staffTypes = ['TUTOR', 'BEDEL', 'TECH_SUPPORT', 'COORDINATOR'];
+const roleLabels = {
+  STUDENT: 'Estudiante',
+  STAFF: 'Staff',
+  MANAGEMENT: 'Dirección',
+  ADMIN: 'Administrador',
+};
+
+const staffTypeLabels = {
+  TUTOR: 'Tutor',
+  BEDEL: 'Bedel',
+  TECH_SUPPORT: 'Soporte Técnico',
+  COORDINATOR: 'Coordinador',
+};
 
 export const UserForm = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -128,8 +139,8 @@ export const UserForm = ({ user, onClose, onSave }) => {
                   required
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all appearance-none"
                 >
-                  {roles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                  {Object.entries(roleLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </div>
@@ -145,28 +156,30 @@ export const UserForm = ({ user, onClose, onSave }) => {
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all appearance-none"
                   >
                     <option value="">Selecciona tipo...</option>
-                    {staffTypes.map((st) => (
-                      <option key={st} value={st}>{st}</option>
+                    {Object.entries(staffTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Contraseña solo si es nuevo o si se quiere cambiar */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-main">
-                  Contraseña {user && <span className="text-text-secondary text-xs font-normal">(Dejar en blanco para no cambiar)</span>}
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required={!user}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
+              {/* Contraseña solo al crear nuevo usuario */}
+              {!user && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">
+                    Contraseña {user && <span className="text-text-secondary text-xs font-normal">(Dejar en blanco para no cambiar)</span>}
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required={!user}
+                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-border mt-6">

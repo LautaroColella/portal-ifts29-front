@@ -1,7 +1,7 @@
 import { apiFetch } from './api';
 
 export const userService = {
-  getUsers: async (page = 1, limit = 100) => {
+  getUsers: async (page = 1, limit = 50) => {
     const result = await apiFetch(`/users?page=${page}&limit=${limit}`);
     return result.data || [];
   },

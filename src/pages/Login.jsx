@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 export const Login = () => {
   const { login } = useAuth();
@@ -108,6 +109,15 @@ export const Login = () => {
             <span>{loading ? 'Ingresando...' : 'Iniciar Sesión'}</span>
           </button>
         </form>
+
+         <div className="mt-6 text-center text-sm">
+          <p className="text-text-secondary">
+            ¿No tienes una cuenta?{' '}
+            <Link to="/registro" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+              Regístrate aquí
+            </Link>
+          </p>
+        </div>
 
         <div className="mt-8 text-center text-sm text-text-secondary">
           <p>Portal IFTS 29 - Sistema de Reclamos</p>
