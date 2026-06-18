@@ -8,6 +8,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { MetricsDashboard } from './pages/MetricsDashboard';
 import { Login } from './pages/Login';
 import { Users } from './pages/Users';
+import { Register } from './pages/Register';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -62,6 +63,16 @@ function App() {
               </PublicRoute>
             }
           />
+
+          <Route
+            path="/registro"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+
           <Route
             path="/"
             element={
@@ -70,7 +81,7 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/reclamos" replace />} />
+            <Route index element={<Navigate to="/reclamos" replace />} />            
             <Route path="usuarios" element={<ProtectedRoute roles={['ADMIN']}><Users /></ProtectedRoute>} />
             <Route path="reclamos" element={<TicketsList />} />
             <Route path="reclamos/create" element={<CreateTicket />} />
