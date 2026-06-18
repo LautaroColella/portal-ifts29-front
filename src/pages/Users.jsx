@@ -10,6 +10,10 @@ export const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
 
   const roleLabels = {
     ADMIN: 'Administrador',
@@ -62,14 +66,17 @@ export const Users = () => {
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-      try {
-        await userService.deleteUser(id);
-        fetchUsers();
-      } catch (error) {
+  const handleDeleteUser = async () => {
+    try {
+      setDeleteLoading(true);
+      await userService.deleteUser(userToDelete.id);
+      fetchUsers();
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+    } catch (error) {
         console.error("Error al eliminar usuario:", error);
-      }
+    } finally {
+        setDeleteLoading(false);
     }
   };
 
@@ -170,8 +177,10 @@ export const Users = () => {
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                            onClick={() => {
+                              setUserToDelete(user);
+                              setShowDeleteConfirm(true);
+                            }}
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -192,6 +201,45 @@ export const Users = () => {
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && userToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm border border-border">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-state-rejected/10 flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-state-rejected"></i>
+                </div>
+                <h3 className="text-lg font-bold text-text-main">Eliminar Usuario</h3>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                ¿Estás seguro de que deseas eliminar a <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setUserToDelete(null); }}
+                  className="px-4 py-2 bg-background border border-border text-text-main rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={deleteLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-state-rejected text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteLoading ? (
+                    <><i className="fas fa-spinner fa-spin text-xs"></i> Eliminando...</>
+                  ) : (
+                    <><i className="fas fa-trash-alt text-xs"></i> Eliminar</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+          
 
       {isFormOpen && (
         <UserForm
