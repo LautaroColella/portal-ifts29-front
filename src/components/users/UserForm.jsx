@@ -62,7 +62,7 @@ export const UserForm = ({ user, onClose, onSave }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-surface w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden border border-border"
+          className="bg-surface w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-xl overflow-hidden border border-border"
         >
           <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-[var(--sidebar-active-bg)] to-transparent">
             <h2 className="text-xl font-bold text-text-main">
@@ -76,8 +76,9 @@ export const UserForm = ({ user, onClose, onSave }) => {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-main">Nombre</label>
                 <input
@@ -181,8 +182,9 @@ export const UserForm = ({ user, onClose, onSave }) => {
                 </div>
               )}
             </div>
+            </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-border mt-6">
+            <div className="flex justify-end gap-3 p-6 border-t border-border shrink-0 bg-surface">
               <button
                 type="button"
                 onClick={onClose}
