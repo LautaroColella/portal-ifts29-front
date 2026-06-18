@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const roleLabels = {
   STUDENT: 'Estudiante',
-  STAFF: 'Staff',
+  STAFF: 'Personal',
   MANAGEMENT: 'Dirección',
   ADMIN: 'Administrador',
 };
