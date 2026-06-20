@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, MoreVertical, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { userService } from '../services/userService';
-import { UserForm } from '../components/users/UserForm';
+import { motion } from "framer-motion";
+import { Edit2, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { UserForm } from "../components/users/UserForm";
+import { userService } from "../services/userService";
 
 export const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-
   const roleLabels = {
-    ADMIN: 'Administrador',
-    STAFF: 'Staff',
-    STUDENT: 'Estudiante',
-    MANAGEMENT: 'Dirección',
+    ADMIN: "Administrador",
+    STAFF: "Staff",
+    STUDENT: "Estudiante",
+    MANAGEMENT: "Dirección",
   };
 
   const fetchUsers = async () => {
@@ -52,7 +51,7 @@ export const Users = () => {
     try {
       const payload = { ...userData };
       if (!payload.password) delete payload.password;
-      if (payload.role !== 'STAFF') delete payload.staffType;
+      if (payload.role !== "STAFF") delete payload.staffType;
 
       if (selectedUser) {
         await userService.updateUser(selectedUser.id, payload);
@@ -74,9 +73,9 @@ export const Users = () => {
       setShowDeleteConfirm(false);
       setUserToDelete(null);
     } catch (error) {
-        console.error("Error al eliminar usuario:", error);
+      console.error("Error al eliminar usuario:", error);
     } finally {
-        setDeleteLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -94,7 +93,9 @@ export const Users = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-main">Gestión de Usuarios</h1>
+          <h1 className="text-2xl font-bold text-text-main">
+            Gestión de Usuarios
+          </h1>
           <p className="text-sm text-text-secondary mt-1">
             Administra los usuarios del sistema, sus roles y accesos.
           </p>
@@ -134,6 +135,7 @@ export const Users = () => {
                   <th className="py-3 px-4 font-medium">Nombre Completo</th>
                   <th className="py-3 px-4 font-medium">DNI</th>
                   <th className="py-3 px-4 font-medium">Rol</th>
+                  <th className="py-3 px-4 font-medium">Fecha de alta</th>
                   <th className="py-3 px-4 font-medium text-right">Acciones</th>
                 </tr>
               </thead>
@@ -152,23 +154,42 @@ export const Users = () => {
                           <span className="font-medium text-text-main">
                             {user.firstName} {user.lastName}
                           </span>
-                          <span className="text-xs text-text-secondary">{user.email}</span>
+                          <span className="text-xs text-text-secondary">
+                            {user.email}
+                          </span>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-sm text-text-main">{user.dni}</td>
+                      <td className="py-4 px-4 text-sm text-text-main">
+                        {user.dni}
+                      </td>
                       <td className="py-4 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${user.role === 'ADMIN' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                            user.role === 'STAFF' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                            user.role === 'MANAGEMENT' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-                            'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          }`}>
-                          {/* {user.role} {user.staffType ? `(${user.staffType})` : ''} */}
-                          {roleLabels[user.role] || user.role} {user.staffType ? `(${user.staffType})` : ''}
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${
+                            user.role === "ADMIN"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              : user.role === "STAFF"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                : user.role === "MANAGEMENT"
+                                  ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                                  : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
+                        >
+                          {roleLabels[user.role] || user.role}{" "}
+                          {user.staffType ? `(${user.staffType})` : ""}
                         </span>
                       </td>
+                      <td className="py-4 px-4 text-sm text-text-main">
+                        {new Date(user.createdAt).toLocaleString("es-AR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
                       <td className="py-4 px-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-2 transition-opacity">
                           <button
                             onClick={() => handleOpenForm(user)}
                             className="p-1.5 text-text-secondary hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
@@ -181,6 +202,7 @@ export const Users = () => {
                               setUserToDelete(user);
                               setShowDeleteConfirm(true);
                             }}
+                            className="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -191,7 +213,10 @@ export const Users = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="py-10 text-center text-text-secondary">
+                    <td
+                      colSpan="4"
+                      className="py-10 text-center text-text-secondary"
+                    >
                       No se encontraron usuarios que coincidan con la búsqueda.
                     </td>
                   </tr>
@@ -210,14 +235,23 @@ export const Users = () => {
                 <div className="w-10 h-10 rounded-full bg-state-rejected/10 flex items-center justify-center">
                   <i className="fas fa-exclamation-triangle text-state-rejected"></i>
                 </div>
-                <h3 className="text-lg font-bold text-text-main">Eliminar Usuario</h3>
+                <h3 className="text-lg font-bold text-text-main">
+                  Eliminar Usuario
+                </h3>
               </div>
               <p className="text-sm text-text-secondary mb-6">
-                ¿Estás seguro de que deseas eliminar a <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>? Esta acción no se puede deshacer.
+                ¿Estás seguro de que deseas eliminar a{" "}
+                <strong>
+                  {userToDelete.firstName} {userToDelete.lastName}
+                </strong>
+                ? Esta acción no se puede deshacer.
               </p>
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => { setShowDeleteConfirm(false); setUserToDelete(null); }}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setUserToDelete(null);
+                  }}
                   className="px-4 py-2 bg-background border border-border text-text-main rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   disabled={deleteLoading}
                 >
@@ -229,9 +263,14 @@ export const Users = () => {
                   className="px-4 py-2 bg-state-rejected text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleteLoading ? (
-                    <><i className="fas fa-spinner fa-spin text-xs"></i> Eliminando...</>
+                    <>
+                      <i className="fas fa-spinner fa-spin text-xs"></i>{" "}
+                      Eliminando...
+                    </>
                   ) : (
-                    <><i className="fas fa-trash-alt text-xs"></i> Eliminar</>
+                    <>
+                      <i className="fas fa-trash-alt text-xs"></i> Eliminar
+                    </>
                   )}
                 </button>
               </div>
@@ -239,7 +278,6 @@ export const Users = () => {
           </div>
         </div>
       )}
-          
 
       {isFormOpen && (
         <UserForm
