@@ -62,8 +62,6 @@ export const TicketDetail = () => {
     "CANCELLED",
   ];
 
-  const isCurrentUserStaff = currentUser && currentUser.role !== "STUDENT";
-
   const toggleSection = async (section) => {
     if (openSection === section) {
       setOpenSection(null);
@@ -379,7 +377,7 @@ export const TicketDetail = () => {
               <span className="text-sm font-medium text-text-main">
                 {formatUserWithRole(ticket.assignedTo)}
               </span>
-              {isCurrentUserStaff && (
+              {currentUser.role === "STAFF" && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -405,7 +403,7 @@ export const TicketDetail = () => {
               >
                 {formatStatus(ticket.status)}
               </span>
-              {isCurrentUserStaff && (
+              {currentUser.role === "STAFF" && (
                 <>
                   <button
                     type="button"
@@ -533,7 +531,7 @@ export const TicketDetail = () => {
                     </p>
                   ) : (
                     <>
-                      {!isCurrentUserStaff ? (
+                      {currentUser.role === "STUDENT" ? (
                         <div className="bg-background rounded-lg p-4 space-y-3 border border-border">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-text-secondary">
@@ -630,7 +628,7 @@ export const TicketDetail = () => {
                     </p>
                   ) : (
                     <>
-                      {isCurrentUserStaff ? (
+                      {currentUser.role === "STAFF" ? (
                         <div className="bg-background rounded-lg p-4 space-y-3 border border-border">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-text-secondary">
