@@ -29,7 +29,7 @@ export const TicketsList = () => {
         const params = new URLSearchParams({
           page,
           limit,
-          title: title.trim(),
+          ...(title.trim() && { title: title.trim() }),
         });
 
         const response = await apiFetch(`/tickets?${params.toString()}`);
