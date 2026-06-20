@@ -9,6 +9,7 @@ import { MetricsDashboard } from './pages/MetricsDashboard';
 import { Login } from './pages/Login';
 import { Users } from './pages/Users';
 import { Register } from './pages/Register';
+import { Profile } from './pages/Profile';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -88,6 +89,7 @@ function App() {
             <Route path="reclamos/:id" element={<TicketDetail />} />
             <Route path="notificaciones" element={<NotificationsPage />} />
             <Route path="reportes" element={<ProtectedRoute roles={['ADMIN', 'MANAGEMENT']}><MetricsDashboard /></ProtectedRoute>} />
+            <Route path="perfil" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
