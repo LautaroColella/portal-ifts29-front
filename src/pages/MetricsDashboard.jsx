@@ -1,45 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { StatCard } from '../components/metrics/StatCard';
-import { StatusChart } from '../components/metrics/StatusChart';
-import { CategoryChart } from '../components/metrics/CategoryChart';
-import { TimeChart } from '../components/metrics/TimeChart';
-import { Leaderboard } from '../components/metrics/Leaderboard';
-import { RecentTickets } from '../components/metrics/RecentTickets';
-import { ClipboardList, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
-import { apiFetch } from '../services/api';
+import { AlertTriangle, ClipboardList, Clock, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CategoryChart } from "../components/metrics/CategoryChart";
+import { Leaderboard } from "../components/metrics/Leaderboard";
+import { RecentTickets } from "../components/metrics/RecentTickets";
+import { StatCard } from "../components/metrics/StatCard";
+import { StatusChart } from "../components/metrics/StatusChart";
+import { TimeChart } from "../components/metrics/TimeChart";
+import { apiFetch } from "../services/api";
 
 const STATUS_LABELS = {
-  OPEN: 'Pendientes',
-  IN_PROGRESS: 'En Proceso',
-  WAITING_FOR_STUDENT: 'En Proceso',
-  WAITING_FOR_THIRD_PARTY: 'En Proceso',
-  RESOLVED: 'Resueltos',
-  CLOSED: 'Resueltos',
-  CANCELLED: 'Rechazados',
+  OPEN: "Pendientes",
+  IN_PROGRESS: "En Proceso",
+  WAITING_FOR_STUDENT: "En Proceso",
+  WAITING_FOR_THIRD_PARTY: "En Proceso",
+  RESOLVED: "Resueltos",
+  CLOSED: "Resueltos",
+  CANCELLED: "Rechazados",
 };
 
 const STATUS_COLORS = {
-  'Pendientes': 'var(--color-state-pending)',
-  'En Proceso': 'var(--color-state-process)',
-  'Resueltos': 'var(--color-state-resolved)',
-  'Rechazados': 'var(--color-state-rejected)',
+  Pendientes: "var(--color-state-pending)",
+  "En Proceso": "var(--color-state-process)",
+  Resueltos: "var(--color-state-resolved)",
+  Rechazados: "var(--color-state-rejected)",
 };
 
 const CATEGORY_LABELS = {
-  ACADEMIC: 'Académico',
-  INSTITUTIONAL: 'Institucional',
-  TECHNICAL: 'Técnico',
-  GENERAL: 'General',
+  ACADEMIC: "Académico",
+  INSTITUTIONAL: "Institucional",
+  TECHNICAL: "Técnico",
+  GENERAL: "General",
 };
 
 const STATUS_DISPLAY = {
-  OPEN: 'Pendiente',
-  IN_PROGRESS: 'En proceso',
-  WAITING_FOR_STUDENT: 'En proceso',
-  WAITING_FOR_THIRD_PARTY: 'En proceso',
-  RESOLVED: 'Resuelto',
-  CLOSED: 'Resuelto',
-  CANCELLED: 'Rechazado',
+  OPEN: "Pendiente",
+  IN_PROGRESS: "En proceso",
+  WAITING_FOR_STUDENT: "En proceso",
+  WAITING_FOR_THIRD_PARTY: "En proceso",
+  RESOLVED: "Resuelto",
+  CLOSED: "Resuelto",
+  CANCELLED: "Rechazado",
 };
 
 const transformMetrics = (apiData, recentTicketsData) => {
@@ -50,34 +50,42 @@ const transformMetrics = (apiData, recentTicketsData) => {
   });
 
   const statusChartData = Object.entries(grouped)
-    .map(([name, value]) => ({ name, value, color: STATUS_COLORS[name] || '#999' }))
+    .map(([name, value]) => ({
+      name,
+      value,
+      color: STATUS_COLORS[name] || "#999",
+    }))
     .filter((i) => i.value > 0);
 
   const categoryChartData = (apiData.ticketsByCategory || [])
     .map(({ category, count }) => ({
       name: CATEGORY_LABELS[category] || category,
       value: count,
-      color: '#1E88E5',
+      color: "#1E88E5",
     }))
     .filter((i) => i.value > 0);
 
-  const timeChartData = (apiData.ticketsCreatedByPeriod || []).map(({ period, count }) => {
-    const d = new Date(period);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    return { date: `${dd}/${mm}`, tickets: count };
-  });
+  const timeChartData = (apiData.ticketsCreatedByPeriod || []).map(
+    ({ period, count }) => {
+      const d = new Date(period);
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return { date: `${dd}/${mm}`, tickets: count };
+    },
+  );
 
-  const leaderboardData = (apiData.topResolvers || []).map(({ responsible, closedTickets }) => ({
-    name: responsible,
-    closed: closedTickets,
-    active: 0,
-  }));
+  const leaderboardData = (apiData.topResolvers || []).map(
+    ({ responsible, closedTickets }) => ({
+      name: responsible,
+      closed: closedTickets,
+      active: 0,
+    }),
+  );
 
   const recentTickets = (recentTicketsData || []).slice(0, 5).map((t) => {
     const d = new Date(t.createdAt);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
     const yyyy = d.getFullYear();
     return {
       id: t.id,
@@ -104,16 +112,16 @@ const transformMetrics = (apiData, recentTicketsData) => {
 export const MetricsDashboard = () => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
-      setError('');
+      setError("");
       try {
         const [metricsResponse, ticketsResponse] = await Promise.all([
-          apiFetch('/dashboard/metrics'),
-          apiFetch('/tickets?page=1&limit=5'),
+          apiFetch("/dashboard/metrics"),
+          apiFetch("/tickets?page=1&limit=5"),
         ]);
 
         const apiMetrics = metricsResponse.data || metricsResponse;
@@ -121,7 +129,7 @@ export const MetricsDashboard = () => {
         const metrics = transformMetrics(apiMetrics, recentTickets);
         setData(metrics);
       } catch (err) {
-        setError(err.message || 'Error al cargar las métricas.');
+        setError(err.message || "Error al cargar las métricas.");
       } finally {
         setIsLoading(false);
       }
@@ -131,7 +139,11 @@ export const MetricsDashboard = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="text-text-secondary text-center py-8">Cargando métricas...</div>;
+    return (
+      <div className="text-text-secondary text-center py-8">
+        Cargando métricas...
+      </div>
+    );
   }
 
   if (error) {
@@ -143,21 +155,47 @@ export const MetricsDashboard = () => {
   }
 
   if (!data) {
-    return <div className="text-text-secondary text-center py-8">No hay datos disponibles.</div>;
+    return (
+      <div className="text-text-secondary text-center py-8">
+        No hay datos disponibles.
+      </div>
+    );
   }
 
   const statsConfig = [
-    { title: 'Total de Reclamos', value: data.total, icon: ClipboardList, colorClass: 'bg-brand-blue' },
-    { title: 'Tasa de Resolución', value: `${data.resolutionRate}%`, icon: TrendingUp, colorClass: 'bg-brand-green' },
-    { title: 'Tiempo Prom. Resolución', value: `${data.avgResolutionHours} hs`, icon: Clock, colorClass: 'bg-state-process' },
-    { title: 'Críticos (>7 días)', value: data.pendingOld7, icon: AlertTriangle, colorClass: 'bg-state-rejected' },
+    {
+      title: "Total de Reclamos",
+      value: data.total,
+      icon: ClipboardList,
+      colorClass: "bg-brand-blue",
+    },
+    {
+      title: "Tasa de Resolución",
+      value: `${data.resolutionRate}%`,
+      icon: TrendingUp,
+      colorClass: "bg-brand-green",
+    },
+    {
+      title: "Tiempo Prom. Resolución",
+      value: `${data.avgResolutionHours} hs`,
+      icon: Clock,
+      colorClass: "bg-state-process",
+    },
+    {
+      title: "Críticos (>7 días)",
+      value: data.pendingOld7,
+      icon: AlertTriangle,
+      colorClass: "bg-state-rejected",
+    },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-text-main flex items-center gap-2">
-          <span className="text-brand-blue"><ClipboardList /></span>
+          <span className="text-brand-blue">
+            <ClipboardList />
+          </span>
           Dashboard Analítico
         </h2>
       </div>
