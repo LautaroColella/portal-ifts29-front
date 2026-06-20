@@ -139,7 +139,13 @@ export const TicketDetail = () => {
         body: JSON.stringify({ content: newCommentContent.trim() }),
       });
       const newComment = response.data || response;
-      setComments([...comments, newComment]);
+      setComments([
+        ...comments,
+        {
+          ...newComment,
+          author: currentUser,
+        },
+      ]);
       setNewCommentContent("");
     } catch (err) {
       setCommentError(
@@ -163,7 +169,13 @@ export const TicketDetail = () => {
         body: JSON.stringify({ content: newMessageContent.trim() }),
       });
       const newMessage = response.data || response;
-      setMessages([...messages, newMessage]);
+      setMessages([
+        ...messages,
+        {
+          ...newMessage,
+          author: currentUser,
+        },
+      ]);
       setNewMessageContent("");
     } catch (err) {
       setMessageError(
