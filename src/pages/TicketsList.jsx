@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../services/api";
 
 export const TicketsList = () => {
@@ -13,8 +14,11 @@ export const TicketsList = () => {
   const [apiError, setApiError] = useState("");
   const [hasNextPage, setHasNextPage] = useState(false);
   const [viewMode, setViewMode] = useState("cards");
+  const { user: currentUser } = useAuth();
 
   const MAX_TITLE_LENGTH = 100;
+
+  const isCurrentUserStaff = currentUser && currentUser.role !== "STUDENT";
 
   useEffect(() => {
     const fetchTicketsData = async () => {
@@ -144,13 +148,15 @@ export const TicketsList = () => {
           Listado de Reclamos
         </h2>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/reclamos/create")}
-            className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark transition-all shadow-sm hover:shadow-md flex items-center gap-2"
-          >
-            <i className="fas fa-plus text-xs"></i>
-            Crear nuevo
-          </button>
+          {!isCurrentUserStaff && (
+            <button
+              onClick={() => navigate("/reclamos/create")}
+              className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+            >
+              <i className="fas fa-plus text-xs"></i>
+              Crear nuevo
+            </button>
+          )}
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode("cards")}
