@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Moon, Sun, Menu, Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail, LogOut } from 'lucide-react';
+import { ChevronDown, Moon, Sun, Menu, Bell, ClipboardList, RefreshCw, UserCheck, MessageSquare, Mail, LogOut, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../services/notificationApi';
 import { useAuth } from '../../context/AuthContext';
@@ -235,6 +235,13 @@ export const Topbar = ({ toggleDarkMode, isDarkMode, toggleSidebar }) => {
                 <p className="text-sm font-medium text-text-main">{user?.firstName} {user?.lastName}</p>
                 <p className="text-xs text-text-secondary">{user?.email}</p>
               </div>
+              <button
+                onClick={() => { setShowUserMenu(false); navigate('/perfil'); }}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-text-main hover:bg-background transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Mi perfil
+              </button>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
