@@ -6,6 +6,8 @@ import { apiFetch } from "../services/api";
 export const TicketsList = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [limit] = useState(10);
   const [title, setTitle] = useState("");
   const [validationError, setValidationError] = useState("");
@@ -34,7 +36,9 @@ export const TicketsList = () => {
 
         const response = await apiFetch(`/tickets?${params.toString()}`);
         setTickets(response.data || []);
-        setHasNextPage((response.data || []).length === limit);
+        setTotalPages(response.totalPages || 1);
+        setTotal(response.total || 0);
+        setHasNextPage(page < (response.totalPages || 1));
       } catch (error) {
         const errorMessage = (() => {
           if (error.response?.data?.error) {
@@ -406,8 +410,9 @@ export const TicketsList = () => {
       {/* Pagination Controls */}
       <div className="mt-6 flex items-center justify-between">
         <p className="text-sm text-text-secondary">
-          Página <span className="font-semibold">{page}</span> — Mostrando{" "}
-          {tickets.length} resultado{tickets.length !== 1 ? "s" : ""}
+          Página <span className="font-semibold">{page}</span>/
+          <span className="font-semibold">{totalPages}</span> — Mostrando{" "}
+          {tickets.length} de {total} resultado{total !== 1 ? "s" : ""}
         </p>
         <div className="flex gap-2">
           <button
