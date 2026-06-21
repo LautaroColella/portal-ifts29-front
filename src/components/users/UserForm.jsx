@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CATEGORY_LABELS, SUBCATEGORY_LABELS, SUBCATEGORIES_BY_CATEGORY } from '../../utils/ticketLabels';
 
 const roleLabels = {
   STUDENT: 'Estudiante',
@@ -16,7 +17,7 @@ const staffTypeLabels = {
   COORDINATOR: 'Coordinador',
 };
 
-export const UserForm = ({ user, onClose, onSave }) => {
+export const UserForm = ({ user, onClose, onSave, error }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -25,6 +26,7 @@ export const UserForm = ({ user, onClose, onSave }) => {
     password: '',
     role: 'STUDENT',
     staffType: '',
+    responsibleSubcategories: [],
   });
 
   useEffect(() => {
@@ -34,9 +36,10 @@ export const UserForm = ({ user, onClose, onSave }) => {
         lastName: user.lastName || '',
         dni: user.dni || '',
         email: user.email || '',
-        password: '', 
+        password: '',
         role: user.role || 'STUDENT',
         staffType: user.staffType || '',
+        responsibleSubcategories: user.responsibleSubcategories || [],
       });
     }
   }, [user]);
@@ -46,8 +49,18 @@ export const UserForm = ({ user, onClose, onSave }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === 'role' && value !== 'STAFF' ? { staffType: '' } : {})
+      ...(name === 'role' && value !== 'STAFF' ? { staffType: '', responsibleSubcategories: [] } : {})
     }));
+  };
+
+  const handleSubcategoryToggle = (subcategory) => {
+    setFormData((prev) => {
+      const current = prev.responsibleSubcategories;
+      const updated = current.includes(subcategory)
+        ? current.filter((s) => s !== subcategory)
+        : [...current, subcategory];
+      return { ...prev, responsibleSubcategories: updated };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -78,6 +91,11 @@ export const UserForm = ({ user, onClose, onSave }) => {
 
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
             <div className="p-6 space-y-6 overflow-y-auto">
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
+                  {error}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-main">Nombre</label>
@@ -138,12 +156,16 @@ export const UserForm = ({ user, onClose, onSave }) => {
                   value={formData.role}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all appearance-none"
+                  disabled={user && user.role === 'STUDENT'}
+                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-text-main transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {Object.entries(roleLabels).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
+                {user && user.role === 'STUDENT' && (
+                  <p className="text-xs text-text-secondary">El rol de estudiante no puede ser modificado.</p>
+                )}
               </div>
 
               {formData.role === 'STAFF' && (
@@ -161,6 +183,34 @@ export const UserForm = ({ user, onClose, onSave }) => {
                       <option key={value} value={value}>{label}</option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {formData.role === 'STAFF' && (
+                <div className="space-y-3 md:col-span-2">
+                  <label className="text-sm font-medium text-text-main">Subcategorías Responsables</label>
+                  <div className="space-y-4 max-h-60 overflow-y-auto p-3 bg-background border border-border rounded-lg">
+                    {Object.entries(SUBCATEGORIES_BY_CATEGORY).map(([category, subcategories]) => (
+                      <div key={category}>
+                        <p className="text-xs font-semibold text-text-secondary uppercase mb-2">{CATEGORY_LABELS[category]}</p>
+                        <div className="space-y-1.5 ml-2">
+                          {subcategories.map((sub) => (
+                            <label key={sub} className="flex items-center gap-2 cursor-pointer group">
+                              <input
+                                type="checkbox"
+                                checked={formData.responsibleSubcategories.includes(sub)}
+                                onChange={() => handleSubcategoryToggle(sub)}
+                                className="w-4 h-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-text-main group-hover:text-blue-600 transition-colors">
+                                {SUBCATEGORY_LABELS[sub]}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
