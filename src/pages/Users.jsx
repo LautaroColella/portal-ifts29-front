@@ -13,6 +13,7 @@ export const Users = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const roleLabels = {
     ADMIN: "Administrador",
@@ -45,23 +46,47 @@ export const Users = () => {
   const handleCloseForm = () => {
     setSelectedUser(null);
     setIsFormOpen(false);
+    setSaveError('');
   };
 
   const handleSaveUser = async (userData) => {
     try {
+      setSaveError('');
       const payload = { ...userData };
       if (!payload.password) delete payload.password;
-      if (payload.role !== "STAFF") delete payload.staffType;
+      if (payload.role !== "STAFF") {
+        delete payload.staffType;
+        delete payload.responsibleSubcategories;
+      }
 
       if (selectedUser) {
-        await userService.updateUser(selectedUser.id, payload);
+        const profileData = {};
+        if (payload.firstName !== selectedUser.firstName) profileData.firstName = payload.firstName;
+        if (payload.lastName !== selectedUser.lastName) profileData.lastName = payload.lastName;
+        if (payload.email !== selectedUser.email) profileData.email = payload.email;
+
+        if (Object.keys(profileData).length > 0) {
+          await userService.updateUser(selectedUser.id, profileData);
+        }
+
+        if (payload.role !== selectedUser.role) {
+          await userService.updateUserRole(selectedUser.id, { role: payload.role });
+        }
+
+        if (payload.role === 'STAFF') {
+          await userService.updateUserStaffSettings(selectedUser.id, {
+            staffType: payload.staffType,
+            responsibleSubcategories: payload.responsibleSubcategories || [],
+          });
+        }
       } else {
         await userService.createUser(payload);
       }
       fetchUsers();
       handleCloseForm();
     } catch (error) {
-      console.error("Error al guardar usuario:", error);
+      const msg = error.response?.data?.error || error.message || 'Error al guardar usuario';
+      setSaveError(msg);
     }
   };
 
@@ -176,7 +201,7 @@ export const Users = () => {
                           }`}
                         >
                           {roleLabels[user.role] || user.role}{" "}
-                          {user.staffType ? `(${user.staffType})` : ""}
+                          {user.role === "STAFF" && user.staffType ? `(${user.staffType})` : ""}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-sm text-text-main">
@@ -284,6 +309,7 @@ export const Users = () => {
           user={selectedUser}
           onClose={handleCloseForm}
           onSave={handleSaveUser}
+          error={saveError}
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../services/api";
+import { formatCategory, formatSubcategory } from "../utils/ticketLabels";
 
 const ROLE_LABELS = {
   ADMIN: "Administrador",
@@ -51,6 +52,9 @@ export const TicketDetail = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [staffUsers, setStaffUsers] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [showReassignConfirm, setShowReassignConfirm] = useState(false);
+  const [reassignLoading, setReassignLoading] = useState(false);
 
   const STATUSES = [
     "OPEN",
@@ -233,24 +237,23 @@ export const TicketDetail = () => {
   };
 
   const openResponsiblePopup = async () => {
-    try {
-      setSelectedResponsible(ticket?.assignedTo?.id || "");
-      setResponsibleSearch("");
-      setPopupError("");
+    setSelectedResponsible(ticket?.assignedTo?.id || "");
+    setResponsibleSearch("");
+    setPopupError("");
+    setShowResponsiblePopup(true);
 
-      if (staffUsers.length === 0) {
-        try {
-          const result = await apiFetch("/users?page=1&limit=100");
-          const users = result.data || [];
-          setStaffUsers(users.filter((u) => u.role !== "STUDENT"));
-        } catch {
-          setStaffUsers([]);
-        }
+    if (staffUsers.length === 0) {
+      try {
+        setLoadingStaff(true);
+        const result = await apiFetch("/users?page=1&limit=50");
+        const users = result.data || [];
+        setStaffUsers(users.filter((u) => u.role === "STAFF"));
+      } catch (err) {
+        setPopupError(err.response?.data?.error || "Error al cargar usuarios");
+        setStaffUsers([]);
+      } finally {
+        setLoadingStaff(false);
       }
-
-      setShowResponsiblePopup(true);
-    } catch (err) {
-      console.error("Error opening responsible popup:", err);
     }
   };
 
@@ -260,24 +263,33 @@ export const TicketDetail = () => {
     setShowStatusPopup(true);
   };
 
-  const handleUpdateResponsible = async () => {
+  const handleRequestReassign = () => {
     if (!selectedResponsible) {
       setPopupError("Debes seleccionar un responsable");
       return;
     }
+    setPopupError("");
+    setShowReassignConfirm(true);
+  };
 
+  const handleConfirmReassign = async () => {
     try {
+      setReassignLoading(true);
       setPopupError("");
       const response = await apiFetch(`/tickets/${id}/assignee`, {
         method: "PATCH",
         body: JSON.stringify({ assignedToId: selectedResponsible }),
       });
       setTicket(response.data || response);
+      setShowReassignConfirm(false);
       setShowResponsiblePopup(false);
     } catch (err) {
+      setShowReassignConfirm(false);
       setPopupError(
-        err.response?.data?.error || "Error al actualizar el responsable",
+        err.response?.data?.error || "Error al reasignar el responsable",
       );
+    } finally {
+      setReassignLoading(false);
     }
   };
 
@@ -377,7 +389,7 @@ export const TicketDetail = () => {
               <span className="text-sm font-medium text-text-main">
                 {formatUserWithRole(ticket.assignedTo)}
               </span>
-              {currentUser.role === "STAFF" && (
+              {currentUser?.role === "STAFF" && ticket.assignedTo?.id === currentUser?.id && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -474,7 +486,7 @@ export const TicketDetail = () => {
                   Categoría
                 </p>
                 <p className="text-sm text-text-main font-semibold">
-                  {ticket.categoryLabel || ticket.category || "N/A"}
+                  {formatCategory(ticket.category) || "N/A"}
                 </p>
               </div>
               <div className="bg-background rounded-lg px-4 py-3">
@@ -482,7 +494,7 @@ export const TicketDetail = () => {
                   Subcategoría
                 </p>
                 <p className="text-sm text-text-main font-semibold">
-                  {ticket.subcategoryLabel || ticket.subcategory || "N/A"}
+                  {formatSubcategory(ticket.subcategory) || "N/A"}
                 </p>
               </div>
             </div>
@@ -790,24 +802,30 @@ export const TicketDetail = () => {
                 <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               </div>
               <div className="space-y-1.5 mb-4 max-h-48 overflow-y-auto pr-1">
-                {filteredResponsibles.map((responsible) => (
-                  <button
-                    key={responsible.id}
-                    onClick={() => setSelectedResponsible(responsible.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      selectedResponsible === responsible.id
-                        ? "bg-brand-blue text-white shadow-md"
-                        : "bg-background text-text-main hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <span className="flex items-center justify-between">
-                      {responsible.label}
-                      {selectedResponsible === responsible.id && (
-                        <i className="fas fa-check text-sm"></i>
-                      )}
-                    </span>
-                  </button>
-                ))}
+                {loadingStaff ? (
+                  <p className="text-sm text-text-secondary text-center py-4">Cargando usuarios...</p>
+                ) : filteredResponsibles.length === 0 ? (
+                  <p className="text-sm text-text-secondary text-center py-4">No se encontraron usuarios.</p>
+                ) : (
+                  filteredResponsibles.map((responsible) => (
+                    <button
+                      key={responsible.id}
+                      onClick={() => setSelectedResponsible(responsible.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        selectedResponsible === responsible.id
+                          ? "bg-brand-blue text-white shadow-md"
+                          : "bg-background text-text-main hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <span className="flex items-center justify-between">
+                        {responsible.label}
+                        {selectedResponsible === responsible.id && (
+                          <i className="fas fa-check text-sm"></i>
+                        )}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
               {popupError && (
                 <p className="text-state-rejected text-xs mb-3 font-medium">
@@ -822,10 +840,55 @@ export const TicketDetail = () => {
                   Cancelar
                 </button>
                 <button
-                  onClick={handleUpdateResponsible}
+                  onClick={handleRequestReassign}
                   className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
                 >
-                  Actualizar <i className="fas fa-arrow-right text-xs"></i>
+                  Reasignar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign Confirmation Modal */}
+      {showReassignConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm border border-border">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                  <i className="fas fa-exchange-alt text-brand-blue"></i>
+                </div>
+                <h3 className="text-lg font-bold text-text-main">
+                  Confirmar Reasignación
+                </h3>
+              </div>
+              <p className="text-sm text-text-secondary mb-6">
+                ¿Estás seguro de que deseas reasignar el ticket <strong>#{ticket.id}</strong> a{" "}
+                <strong>{responsibles.find((r) => r.id === selectedResponsible)?.label}</strong>?
+                Ya no tendrás acceso a este ticket.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowReassignConfirm(false)}
+                  className="px-4 py-2 bg-background border border-border text-text-main rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={reassignLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmReassign}
+                  disabled={reassignLoading}
+                  className="px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-brand-dark flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {reassignLoading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin text-xs"></i> Reasignando...
+                    </>
+                  ) : (
+                    "Confirmar"
+                  )}
                 </button>
               </div>
             </div>
