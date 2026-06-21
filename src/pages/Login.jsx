@@ -42,9 +42,7 @@ export const Login = () => {
         className="w-full max-w-md p-8 m-4 bg-surface/80 backdrop-blur-xl border border-border rounded-2xl shadow-2xl relative z-10"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-green-500 mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl tracking-wider">I29</span>
-          </div>
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="IFTS 29" className="w-24 h-24 mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-bold text-text-main">Bienvenido de nuevo</h1>
           <p className="text-text-secondary mt-2 text-sm">Ingresa tus credenciales para acceder al sistema</p>
         </div>
