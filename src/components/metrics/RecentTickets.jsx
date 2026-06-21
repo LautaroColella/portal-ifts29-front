@@ -1,5 +1,6 @@
 import { FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatCategory } from '../../utils/ticketLabels';
 
 export const RecentTickets = ({ tickets }) => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export const RecentTickets = ({ tickets }) => {
                     {ticket.title}
                   </h4>
                   <p className="text-xs text-text-secondary mt-0.5">
-                    {ticket.category}
+                    {formatCategory(ticket.category)}
                   </p>
                 </div>
               </div>

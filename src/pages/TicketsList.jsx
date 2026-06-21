@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../services/api";
+import { formatCategory, formatSubcategory } from "../utils/ticketLabels";
 
 export const TicketsList = () => {
   const navigate = useNavigate();
@@ -222,11 +223,11 @@ export const TicketsList = () => {
         <div className="flex-1 overflow-auto">
           {loading ? (
             <div className="py-8 text-center text-text-secondary">
-              Cargando tickets...
+              Cargando reclamos...
             </div>
           ) : tickets.length === 0 ? (
             <div className="py-8 text-center text-text-secondary">
-              No se encontraron tickets.
+              No se encontraron reclamos.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -239,7 +240,7 @@ export const TicketsList = () => {
                   {/* ID & Status */}
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold text-text-secondary">
-                      Ticket {ticket.id}
+                      Ticket #{ticket.id}
                     </span>
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(ticket.status)}`}
@@ -272,7 +273,7 @@ export const TicketsList = () => {
                         Categoría
                       </p>
                       <p className="text-xs text-text-main truncate">
-                        {ticket.category || "N/A"}
+                        {formatCategory(ticket.category) || "N/A"}
                       </p>
                     </div>
                     <div>
@@ -280,7 +281,7 @@ export const TicketsList = () => {
                         Subcategoría
                       </p>
                       <p className="text-xs text-text-main truncate">
-                        {ticket.subcategory || "N/A"}
+                        {formatSubcategory(ticket.subcategory) || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -350,7 +351,7 @@ export const TicketsList = () => {
                     colSpan="8"
                     className="px-6 py-8 text-center text-text-secondary"
                   >
-                    Cargando tickets...
+                    Cargando reclamos...
                   </td>
                 </tr>
               ) : tickets.length === 0 ? (
@@ -359,7 +360,7 @@ export const TicketsList = () => {
                     colSpan="8"
                     className="px-6 py-8 text-center text-text-secondary"
                   >
-                    No se encontraron tickets.
+                    No se encontraron reclamos.
                   </td>
                 </tr>
               ) : (
@@ -381,10 +382,10 @@ export const TicketsList = () => {
                         : "Sin asignar"}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-main">
-                      {ticket.category || "N/A"}
+                      {formatCategory(ticket.category) || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-main">
-                      {ticket.subcategory || "N/A"}
+                      {formatSubcategory(ticket.subcategory) || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-main">
                       {formatDate(ticket.createdAt)}
